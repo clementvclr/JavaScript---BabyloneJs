@@ -1,5 +1,5 @@
 import { Engine } from "@babylonjs/core";
-
+import { Inspector } from "@babylonjs/inspector";
 import Game from "./game";
 
 let canvas;
