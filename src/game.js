@@ -1,3 +1,5 @@
+import { Scene, FreeCamera, Vector3, HemisphericLight, MeshBuilder } from "@babylonjs/core";
+
 class Game {
 
     #canvas;
