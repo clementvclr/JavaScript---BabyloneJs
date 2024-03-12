@@ -44,8 +44,6 @@ class Game {
         this.gameLoop();
         this.endGame();
 
-        // Inspector dans le Start
-        //Inspector.Show(scene, {});
     }
 
 
@@ -70,7 +68,13 @@ class Game {
 
         this.#engine.runRenderLoop( ()=> {
             this.updateGame();
-
+            if (this.actions["KeyI"]) { 
+                this.#bInspector = !this.#bInspector; 
+                if (this.#bInspector) 
+                    Inspector.Show(); 
+                else 
+                    Inspector.Hide(); 
+            }
             this.actions = {};
             divFps.innerHTML = this.#engine.getFps().toFixed() + " fps";
             this.#gameScene.render();
@@ -87,23 +91,12 @@ class Game {
         this.#sphere.position.y = 2+Math.sin(this.#phase) ;
         this.#sphere.scaling.y = 1 + 0.125*Math.sin(this.#phase);
 
-        // if (this.inputMap["KeyA"] && this.#sphere.position.x > -30) 
-        //     this.#sphere.position.x -= 0.01 * delta; 
-        // else if (this.inputMap["KeyD"] && this.#sphere.position.x < 30) 
-        //     this.#sphere.position.x += 0.01 * delta;
-
-        // if (this.inputMap["KeyW"] && this.#sphere.position.z < 30) 
-        //     this.#sphere.position.z += 0.01 * delta; 
-        // else if (this.inputMap["KeyS"] && this.#sphere.position.z > -30) 
-        //     this.#sphere.position.z -= 0.01 * delta;
-        
-        // if (this.actions["Space"]) this.#vitesseY *= 1.25;
 
         // //Collisions 
-        // if (this.#sphere.intersectsMesh(this.#zoneA, false)) 
-        //     this.#sphere.material.emissiveColor = Color3.Red(); 
-        // else 
-        //     this.#sphere.material.emissiveColor = Color3.Black();
+        if (this.#sphere.intersectsMesh(this.#zoneA, false)) 
+            this.#sphere.material.emissiveColor = Color3.Red(); 
+        else 
+            this.#sphere.material.emissiveColor = Color3.Black();
     }
 
     endGame() {
