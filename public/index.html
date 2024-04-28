@@ -1,39 +1,96 @@
 <!DOCTYPE html>
 <html lang="fr" xmlns="http://www.w3.org/1999/xhtml">
-    <head>
-        <meta charset="utf-8">
-        <meta name="viewport" content="width=device-width,initial-scale=1.0">
-        <title>BabylonJS Game</title>
-        <link rel="icon" type="image/x-icon" href="./favicon.ico">
-        <style>
-            html, body {
-                overflow: hidden;
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-            }
-            #renderCanvas {
-                width: 100%;
-                height: 100%;
-                touch-action: none;
-            }
-            #fps {
-                position: absolute;
-                background-color: black;
-                border: 2px solid red;
-                text-align: center;
-                font-size: 16px;
-                color: white;
-                top: 15px;
-                right: 10px;
-                width: 60px;
-                height: 20px;
-            }
-        </style>
-    </head>
-    <body>
-        <canvas id="renderCanvas" touch-action="none"></canvas>
-        <div id="fps">0</div>
-    </body>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>BabylonJS Game</title>
+    <link rel="icon" type="image/x-icon" href="./favicon.ico">
+    <style>
+        html,
+        body {
+            overflow: hidden;
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        #renderCanvas {
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        #fps {
+            position: absolute;
+            background-color: black;
+            border: 2px solid red;
+            text-align: center;
+            font-size: 16px;
+            color: white;
+            top: 15px;
+            right: 10px;
+            width: 60px;
+            height: 20px;
+        }
+        .status {
+            position: absolute;
+            top: 40px;
+            right: 10px;
+            background-color: black;
+            color: white;
+            padding: 5px;
+            border: 1px solid #fff;
+            font-size: 12px;
+        }
+        .status {
+    position: absolute;
+    color: white;
+    padding: 5px;
+    background-color: rgba(0, 0, 0, 0.75); /* semi-transparent black */
+    border: 1px solid #fff;
+    font-size: 12px;
+    text-align: left;
+    white-space: nowrap; /* prevents text from wrapping */
+    z-index: 10; /* ensures the divs are on top of other elements */
+}
+
+#currentSpeed {
+    top: 40px; /* distance from the top of the canvas */
+    right: 10px; /* distance from the right of the canvas */
+}
+
+#currentEndurance {
+    top: 60px; /* adjust this value so it's below the currentSpeed div */
+    right: 10px;
+}
+
+#positionX {
+    top: 80px; /* adjust this value so it's below the currentEndurance div */
+    right: 10px;
+}
+
+#positionY {
+    top: 100px; /* adjust this value so it's below the positionX div */
+    right: 10px;
+}
+
+#positionZ {
+    top: 120px; /* adjust this value so it's below the positionY div */
+    right: 10px;
+}
+    </style>
+</head>
+
+<body>
+    <canvas id="renderCanvas" touch-action="none"></canvas>
+    <div id="fps">0</div>
+    <div id="currentSpeed" class="status">Vitesse: 0</div>
+    <div id="currentEndurance" class="status">Endurance: 100</div>
+    <div id="positionX" class="status">Position X: 0</div>
+    <div id="positionY" class="status">Position Y: 0</div>
+    <div id="positionZ" class="status">Position Z: 0</div>
+</body>
+
 </html>

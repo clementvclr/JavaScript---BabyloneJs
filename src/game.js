@@ -11,6 +11,8 @@ import theatreUrl from "../assets/models/low_poly_bolshoi_theatre.glb";
 import floorUrl from "../assets/textures/floor.png";
 import floorBumpUrl from "../assets/textures/floor_bump.PNG";
 
+import girlHvmodel from "../assets/models/HVGirl.glb";
+
 class Game {
 
     #canvas;
@@ -49,7 +51,7 @@ class Game {
 
     async initGame() {
         this.#gameScene = this.createScene();
-        this.#player = new Player(3, 1, 3, this.#gameScene); 
+        this.#player = new Player(3, 1, 3,100, this.#gameScene); 
         await this.#player.init();
         this.initInput();
     }
@@ -86,21 +88,22 @@ class Game {
 
         let delta = this.#engine.getDeltaTime() / 1000.0 ;
         this.#player.update(this.inputMap, this.actions, delta);
-
         this.#phase += this.#vitesseY * delta;
         this.#sphere.position.y = 2+Math.sin(this.#phase) ;
         this.#sphere.scaling.y = 1 + 0.125*Math.sin(this.#phase);
 
 
-        // //Collisions 
-        if (this.#sphere.intersectsMesh(this.#zoneA, false)) 
-            this.#sphere.material.emissiveColor = Color3.Red(); 
+        //Collisions 
+        if (this.#player.gameObject.intersectsMesh(this.#zoneA, false)){
+            console.log("Colision");
+            this.#sphere.material.emissiveColor = Color3.Red();
+        }
         else 
             this.#sphere.material.emissiveColor = Color3.Black();
     }
 
     endGame() {
-
+    
     }
 
     initInput() { 
