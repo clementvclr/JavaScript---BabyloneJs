@@ -61,24 +61,64 @@ class Player {
     }
 
     deplacement(inputMap, actions, delta) {
+        // // Initialiser les vitesses cibles en fonction des touches de déplacement
+        // let targetSpeedX = 0;
+        // let targetSpeedZ = 0;
+        // if (inputMap["KeyW"]) targetSpeedZ = 25;
+        // if (inputMap["KeyS"]) targetSpeedZ = -25;
+
+        // if (inputMap["KeyQ"]) {
+        //     this.transform.rotate(Vector3.Up(), -0.3 * delta); // Rotation à gauche
+        // }
+        // if (inputMap["KeyE"]) {
+        //     this.transform.rotate(Vector3.Up(), 0.3 * delta); // Rotation à droite
+        // }
+
         // Initialiser les vitesses cibles en fonction des touches de déplacement
         let targetSpeedX = 0;
         let targetSpeedZ = 0;
-        if (inputMap["KeyA"]) targetSpeedX = -25;
-        if (inputMap["KeyD"]) targetSpeedX = 25;
-        if (inputMap["KeyW"]) targetSpeedZ = 25;
-        if (inputMap["KeyS"]) targetSpeedZ = -25;
-    
+
+        // Gérer la rotation du personnage
+        if (inputMap["KeyQ"]) {
+            this.transform.rotate(Vector3.Up(), -1.2 * delta); // Rotation à gauche
+        }
+        if (inputMap["KeyE"]) {
+            this.transform.rotate(Vector3.Up(), 1.2 * delta); // Rotation à droite
+        }
+
+        // Utiliser la direction de face du personnage pour déterminer le vecteur de déplacement
+        let forward = Vector3.Forward();
+        forward = Vector3.TransformNormal(forward, this.transform.getWorldMatrix());
+        let right = Vector3.Right();
+        right = Vector3.TransformNormal(right, this.transform.getWorldMatrix());
+
+        if (inputMap["KeyW"]) {
+            targetSpeedX += forward.x * 25;
+            targetSpeedZ += forward.z * 25;
+        }
+        if (inputMap["KeyS"]) {
+            targetSpeedX -= forward.x * 25;
+            targetSpeedZ -= forward.z * 25;
+        }
+        if (inputMap["KeyA"]) {
+            targetSpeedX -= right.x * 25;
+            targetSpeedZ -= right.z * 25;
+        }
+        if (inputMap["KeyD"]) {
+            targetSpeedX += right.x * 25;
+            targetSpeedZ += right.z * 25;
+        }
+
         // Appliquer l'accélération avec la touche Shift
         if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.endurance > 0) {
             let accelerationFactor = 2;  // Multiplicateur de la vitesse lors de l'accélération
             targetSpeedX *= accelerationFactor;
             targetSpeedZ *= accelerationFactor;
-    
+
             this.endurance -= this.enduranceConsumptionRate * delta;
             if (this.endurance < 0) this.endurance = 0.0;
         }
-    
+
         // Gestion de l'endurance sans accélération
         else {
             if (this.endurance < 100) {
@@ -91,15 +131,15 @@ class Player {
         this.speedX = Math.max(Math.min(this.speedX, this.maxSpeed), -this.maxSpeed);  // Limite pour speedX
         this.speedZ = Math.max(Math.min(this.speedZ, this.maxSpeed), -this.maxSpeed);  // Limite pour speedZ
 
-    
+
         // Appliquer un facteur de lissage pour les vitesses 
         this.speedX += (targetSpeedX - this.speedX) * this.accelerationRate * delta;
         this.speedZ += (targetSpeedZ - this.speedZ) * this.accelerationRate * delta;
-    
+
         // Mouvement
         this.x += this.speedX * delta;
         this.z += this.speedZ * delta;
-    
+
         // Gestion du saut
         if (actions["Space"] && this.y <= 2.0 && this.speedY < 0) this.speedY = 50.0;
         //Check collisions 

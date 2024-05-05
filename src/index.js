@@ -2,6 +2,8 @@ import { Engine } from "@babylonjs/core";
 import { Inspector } from "@babylonjs/inspector";
 import Game from "./game";
 
+import MainMenu from "../assets/picture/menu.jpg";
+
 let canvas;
 let engine;
 
@@ -10,7 +12,7 @@ const babylonInit = async () => {
     engine = new Engine(canvas, false, {
         adaptToDeviceRatio: true,
     });
-    window.addEventListener("resize", function () {
+    window.addEventListener("resize", function () {q
         engine.resize();
     });
 };

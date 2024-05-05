@@ -1,4 +1,4 @@
-
+import Player from './player';
 
 class Enemy extends Player{
 
@@ -6,6 +6,7 @@ class Enemy extends Player{
 
     constructor(x, y, z, endurance, scene, levelAI){
         super(x, y, z, endurance, scene);
+        
     }
 
 }

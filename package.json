@@ -46,6 +46,7 @@
     "webpack-merge": "^5.10.0"
   },
   "dependencies": {
+    "bootstrap": "^5.3.3",
     "eslint-plugin-import": "^2.29.1",
     "gh-pages": "^6.1.1"
   }
