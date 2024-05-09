@@ -20,6 +20,9 @@ class Game {
 
     #player;
 
+    #camera;
+    #scene
+
     #bInspector = false;
 
     #zoneA;
@@ -51,7 +54,7 @@ class Game {
 
     async initGame() {
         this.#gameScene = this.createScene();
-        this.#player = new Player(3, 1, 3,100, this.#gameScene); 
+        this.#player = new Player(3, 1, 3,100, this.#gameScene, this.#camera); 
         await this.#player.init();
         this.initInput();
     }
@@ -86,7 +89,7 @@ class Game {
 
     updateGame(){
 
-        let delta = this.#engine.getDeltaTime() / 1000.0 ;
+        let delta = this.#engine.getDeltaTime() / 1000.0;
         this.#player.update(this.inputMap, this.actions, delta);
         this.#phase += this.#vitesseY * delta;
         this.#sphere.position.y = 2+Math.sin(this.#phase) ;

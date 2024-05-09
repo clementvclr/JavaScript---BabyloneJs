@@ -12,7 +12,7 @@ const babylonInit = async () => {
     engine = new Engine(canvas, false, {
         adaptToDeviceRatio: true,
     });
-    window.addEventListener("resize", function () {q
+    window.addEventListener("resize", function () {
         engine.resize();
     });
 };
