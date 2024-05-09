@@ -48,13 +48,10 @@ class Player {
         this.transform = new TransformNode("");
         this.transform.position = new Vector3(this.x, this.y, this.z);
         this.gameObject = null;
-        this.init();
     }
 
     async init() {
-
-
-
+        if (this.gameObject) return;
         //On cré le mesh et on l'attache à notre parent 
         const model = await SceneLoader.ImportMeshAsync("", "", girlHvmodel, this.scene);
         this.gameObject = model.meshes[0] /*MeshBuilder.CreateBox("", { size: 1 })*/;
