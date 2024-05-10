@@ -1,4 +1,4 @@
-import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
+import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera,ArcRotateCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
 
 import { Inspector } from "@babylonjs/inspector";
 
@@ -44,6 +44,11 @@ class Game {
         this.#gameScene = await this.createScene();
         this.#player = new Player(3, 1, 3, 100, this.#gameScene, this.#camera);
         await this.#player.init();
+    
+        // Définir la position du joueur comme le point cible de l'ArcRotateCamera
+        this.#camera.target = this.#player.gameObject.position;
+
+    
         this.initInput();
     }
 
@@ -115,9 +120,26 @@ class Game {
 
     createScene() {
         this.#scene = new Scene(this.#engine);
-        this.#camera = new FreeCamera("camera1", new Vector3(0, 5, -10), this.#scene);
-        this.#camera.setTarget(Vector3.Zero());
+
+        // Création et configuration de l'ArcRotateCamera
+        this.#camera = new ArcRotateCamera("arcRotateCam", Math.PI / 2, Math.PI / 4, 10, new Vector3(0, 1, 0), this.#scene);
+        this.#camera.lowerBetaLimit = 0.1;  // Limite inférieure de la rotation verticale (en radians)
+        this.#camera.upperBetaLimit = Math.PI / 2.1;  // Limite supérieure de la rotation verticale, un peu moins que PI/2 pour éviter de regarder directement vers le bas
+        this.#camera.lowerRadiusLimit = 10;  // Limite inférieure de la distance de la caméra
+        this.#camera.upperRadiusLimit = 10;  // Limite supérieure de la distance de la caméra, la même pour maintenir une distance constante
+
+        // Attacher la caméra au canvas pour permettre la rotation contrôlée par la souris
         this.#camera.attachControl(this.#canvas, true);
+
+    
+        // Événement de mouvement de la souris pour ajuster la rotationOffset
+        this.#canvas.addEventListener('mousemove', (event) => {
+            if (event.buttons === 1) {  // Bouton gauche de la souris maintenu
+                this.#camera.rotationOffset += event.movementX * 0.1;
+            }
+        });
+
+
         const light = new HemisphericLight("light", new Vector3(0, 1, 0), this.#scene);
         light.intensity = 0.7;
 

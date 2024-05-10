@@ -51,14 +51,20 @@ class Player {
     }
 
     async init() {
-        if (this.gameObject) return;
-        //On cré le mesh et on l'attache à notre parent 
-        const model = await SceneLoader.ImportMeshAsync("", "", girlHvmodel, this.scene);
-        this.gameObject = model.meshes[0] /*MeshBuilder.CreateBox("", { size: 1 })*/;
-        this.gameObject.parent = this.transform;
+        try {
+            const model = await SceneLoader.ImportMeshAsync("", "", girlHvmodel, this.scene);
+            this.gameObject = model.meshes[0];
+            console.log("Mesh chargé : ", this.gameObject);
 
+            this.gameObject.scaling = new Vector3(0.1, 0.1, 0.1);
+            console.log("Nouveau scaling appliqué : ", this.gameObject.scaling);
+
+            this.transform = new TransformNode("playerTransform", this.scene);
+            this.gameObject.parent = this.transform;
+        } catch (error) {
+            console.error("Erreur lors du chargement du modèle : ", error);
+        }
     }
-
     //TODO : Faire une separation en fonction afin pouvoir avoir les modficateurs qui seront sélectionner en paramètre
     //TODO : ajouter un paramètre pour la prise en charge des modificateurs
 
