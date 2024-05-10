@@ -1,5 +1,5 @@
 import { TransformNode } from "@babylonjs/core";
-import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
+import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3, Quaternion } from "@babylonjs/core";
 import { Inspector } from "@babylonjs/inspector";
 
 import girlHvmodel from "../assets/models/HVGirl.glb";
@@ -36,8 +36,8 @@ class Player {
 
     maxSpeed = 40;  // Vitesse maximale atteignable lors de l'accélération
     accelerationRate = 5;  // Taux d'accélération
-    enduranceConsumptionRate = 10;  // Taux de consommation de l'endurance par seconde lors de l'accélération
-    enduranceRegenerationRate = 5;  // Taux de régénération de l'endurance par seconde
+    enduranceConsumptionRate = 20;  // Taux de consommation de l'endurance par seconde lors de l'accélération
+    enduranceRegenerationRate = 2;  // Taux de régénération de l'endurance par seconde
 
     animations;
 
@@ -59,8 +59,6 @@ class Player {
             const { meshes, skeletons, animationGroups } = await SceneLoader.ImportMeshAsync("", "", player, this.scene);
             this.gameObject = meshes[0];
             console.log("Mesh chargé : ", this.gameObject);
-
-            this.gameObject.scaling = new Vector3(0.1, 0.1, 0.1);
             console.log("Nouveau scaling appliqué : ", this.gameObject.scaling);
 
             this.transform = new TransformNode("playerTransform", this.scene);
@@ -82,12 +80,12 @@ class Player {
     update(inputMap, actions, delta) {
         // this.deplacement(inputMap, actions, delta); // fonctionne
         this.transform.position.set(this.x, this.y, this.z);
-        this.getInputs( inputMap, actions);
+        this.getInputs( inputMap, actions, delta);
         this.applyCameraToInputs();
         this.move(delta);
         console.log(this.endurance);
         this.updateUI();
-        if (Math.abs(this.speedX) > 0 || Math.abs(this.speedZ) > 0) {
+        if (Math.abs(this.moveInput.x) >= 1 || Math.abs(this.moveInput.z) >= 1) {
             console.log(this.speedX + " - " + this.speedZ);
             if (inputMap["ShiftLeft"] || inputMap["ShiftRight"]) {
                 this.playAnimation("fast");
@@ -99,98 +97,53 @@ class Player {
         }
     }
 
-    /* Ancien fonction pour le déplacement*/
-    // deplacement(inputMap, actions, delta) {
-    //     let targetSpeedX = 0;
-    //     let targetSpeedZ = 0;
-    
-    //     // Gérer la rotation du personnage
-    //     if (inputMap["KeyQ"]) {
-    //         this.transform.rotate(Vector3.Up(), -1.2 * delta);
-    //     }
-    //     if (inputMap["KeyE"]) {
-    //         this.transform.rotate(Vector3.Up(), 1.2 * delta);
-    //     }
-    
-    //     // Calculer les vecteurs de direction basés sur la rotation actuelle du personnage
-    //     let forward = Vector3.TransformNormal(Vector3.Forward(), this.transform.getWorldMatrix());
-    //     let right = Vector3.TransformNormal(Vector3.Right(), this.transform.getWorldMatrix());
-    
-    //     // Mettre à jour les cibles de vitesse en fonction des entrées
-    //     if (inputMap["KeyW"]) {
-    //         targetSpeedX += forward.x * 8;
-    //         targetSpeedZ += forward.z * 8;
-    //     }
-    //     // if (inputMap["KeyS"]) {
-    //     //     targetSpeedX -= forward.x * 8;
-    //     //     targetSpeedZ -= forward.z * 8;
-    //     // }
-    //     // if (inputMap["KeyA"]) {
-    //     //     targetSpeedX -= right.x * 8;
-    //     //     targetSpeedZ -= right.z * 8;
-    //     // }
-    //     // if (inputMap["KeyD"]) {
-    //     //     targetSpeedX += right.x * 8;
-    //     //     targetSpeedZ += right.z * 8;
-    //     // }
-    
-    //     // Accélération avec la touche Shift
-    //     if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.endurance > 0) {
-    //         let accelerationFactor = 2;
-    //         targetSpeedX *= accelerationFactor;
-    //         targetSpeedZ *= accelerationFactor;
-    //         this.endurance -= this.enduranceConsumptionRate * delta;
-    //     }
-    
-    //     // Réinitialiser l'endurance si nécessaire
-    //     if (this.endurance < 100) {
-    //         this.endurance += this.enduranceRegenerationRate * delta;
-    //         this.endurance = Math.min(this.endurance, 100);
-    //     }
-    
-    //     // Appliquer un lissage aux vitesses actuelles pour créer un mouvement plus naturel
-    //     this.speedX = this.speedX + (targetSpeedX - this.speedX) * this.accelerationRate * delta;
-    //     this.speedZ = this.speedZ + (targetSpeedZ - this.speedZ) * this.accelerationRate * delta;
-    
-    //     // Assurer que les vitesses ne restent pas bloquées sur une petite valeur non-nulle
-    //     if (Math.abs(targetSpeedX) < 0.1) this.speedX = 0;
-    //     if (Math.abs(targetSpeedZ) < 0.1) this.speedZ = 0;
-    
-    //     // Déplacer le personnage
-    //     this.x += this.speedX * delta;
-    //     this.z += this.speedZ * delta;
 
-    //     // Gestion du saut
-    //     if (actions["Space"] && this.y <= 2.0 && this.speedY < 0) this.speedY = 50.0;
-    //     //Check collisions 
-    //     if (this.x > 400) this.x = 400;
-    //     else if (this.x < -400) this.x = -400;
-    //     if (this.z > 400) this.z = 400;
-    //     else if (this.z < -400) this.z = -400;
-    //     if (this.y < 1) this.y = 1;
-    // }
-
-    getInputs(inputMap, actions) {
+    getInputs(inputMap, actions,delta) {
         this.moveInput.set(0, 0, 0);
         
-        if (inputMap["KeyA"]) {
-            this.moveInput.x = -1;
-        }
-        else if (inputMap["KeyD"]) {
-            this.moveInput.x = 1;
-        }
+        if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.endurance > 0) {
+            if (inputMap["KeyA"]) {
+                this.moveInput.x = -3;
+            }
+            else if (inputMap["KeyD"]) {
+                this.moveInput.x = 3;
+            }
+            if (inputMap["KeyW"]) {
+                this.moveInput.z = 3;
+            }
+            else if (inputMap["KeyS"]) {
+                this.moveInput.z = -3;
+            }
 
-        
-        if (inputMap["KeyW"]) {
-            this.moveInput.z = 1;
+            if (actions["Space"]) {
+                this.moveInput.y = 1;
+            }
+            this.endurance -= this.enduranceConsumptionRate * delta;
+            if (this.endurance < 0) this.endurance = 0.0;
         }
-        else if (inputMap["KeyS"]) {
-            this.moveInput.z = -1;
-        }
+        else{
+            if (this.endurance < 100) {
+                    this.endurance += this.enduranceRegenerationRate * delta;
+                    if (this.endurance > 100) this.endurance = 100.0;
+            }
+            if (inputMap["KeyA"]) {
+                this.moveInput.x = -1;
+            }
+            else if (inputMap["KeyD"]) {
+                this.moveInput.x = 1;
+            }
+            if (inputMap["KeyW"]) {
+                this.moveInput.z = 1;
+            }
+            else if (inputMap["KeyS"]) {
+                this.moveInput.z = -1;
+            }
 
-        if (actions["Space"]) {
-            this.moveInput.y = 1;
+            if (actions["Space"]) {
+                this.moveInput.y = 1;
+            }
         }
+       
 
         // Appliquer l'accélération avec la touche Shift
         // if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.endurance > 0) {
@@ -233,6 +186,14 @@ class Player {
         // if (this.y < 1) this.y = 1;
     }
    
+    setRotationY(angle) {
+        if (this.gameObject && this.gameObject.rotationQuaternion) {
+            this.gameObject.rotationQuaternion = Quaternion.FromEulerAngles(0, angle, 0);
+        } else if (this.gameObject) {
+            this.gameObject.rotation.y = angle;
+        }
+    }
+
     applyCameraToInputs() {
         
         this.moveDirection.set(0, 0, 0);
@@ -294,9 +255,9 @@ class Player {
     updateUI() {
         document.getElementById('currentSpeed').innerText = `Vitesse: X: ${this.speedX.toFixed(2)}, Y: ${this.speedY.toFixed(2)}, Z: ${this.speedZ.toFixed(2)}`;
         document.getElementById('currentEndurance').innerText = `Endurance: ${this.endurance.toFixed(2)}`;
-        document.getElementById('positionX').innerText = `Position X: ${this.x.toFixed(2)}`;
-        document.getElementById('positionY').innerText = `Position Y: ${this.y.toFixed(2)}`;
-        document.getElementById('positionZ').innerText = `Position Z: ${this.z.toFixed(2)}`;
+        document.getElementById('positionX').innerText = `Position X: ${this.moveInput.x.toFixed(2)}`;
+        document.getElementById('positionY').innerText = `Position Y: ${this.moveInput.y.toFixed(2)}`;
+        document.getElementById('positionZ').innerText = `Position Z: ${this.moveInput.z.toFixed(2)}`;
     }
 
     playAnimation(name) {

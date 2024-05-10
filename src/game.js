@@ -42,7 +42,7 @@ class Game {
 
     async initGame() {
         this.#gameScene = await this.createScene();
-        this.#player = new Player(3, 1, 3, 100, this.#gameScene, this.#camera);
+        this.#player = new Player(0, 0, 0, 100, this.#gameScene, this.#camera);
         await this.#player.init();
     
         // Définir la position du joueur comme le point cible de l'ArcRotateCamera
@@ -85,6 +85,8 @@ class Game {
     updateGame() {
         let delta = this.#engine.getDeltaTime() / 1000.0;
         this.#player.update(this.inputMap, this.actions, delta);
+        this.#player.setRotationY( -this.#camera.alpha - Math.PI / 2);
+        console.log(this.#camera.alpha);
         this.#phase += this.#vitesseY * delta;
         this.#sphere.position.y = 2 + Math.sin(this.#phase);
         this.#sphere.scaling.y = 1 + 0.125 * Math.sin(this.#phase);
@@ -123,6 +125,7 @@ class Game {
 
         // Création et configuration de l'ArcRotateCamera
         this.#camera = new ArcRotateCamera("arcRotateCam", Math.PI / 2, Math.PI / 4, 10, new Vector3(0, 1, 0), this.#scene);
+        this.#camera.alpha = 0;
         this.#camera.lowerBetaLimit = 0.1;  // Limite inférieure de la rotation verticale (en radians)
         this.#camera.upperBetaLimit = Math.PI / 2.1;  // Limite supérieure de la rotation verticale, un peu moins que PI/2 pour éviter de regarder directement vers le bas
         this.#camera.lowerRadiusLimit = 10;  // Limite inférieure de la distance de la caméra
