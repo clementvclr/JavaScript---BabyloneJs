@@ -3,6 +3,7 @@ import { AdvancedDynamicTexture, Rectangle, Control, TextBlock } from "@babylonj
 import { Inspector } from "@babylonjs/inspector";
 
 import Player from "./player";
+import { SoundManager } from "./soundmanager";
 
 // Sert à importer des modeles situer dans le dossier du projetc:\Users\ahmed\Downloads\car.glb
 import meshUrl from "../assets/models/HVGirl.glb";
@@ -50,6 +51,7 @@ class Game {
     async initGame() {
         GlobalManager.gameState = States.STATE_INIT;
         this.#gameScene = await this.createScene();
+        await SoundManager.init();
         this.#player = new Player(0, 0, 0, 100, this.#gameScene, this.#camera);
         await this.#player.init();
     
@@ -63,6 +65,7 @@ class Game {
         await this.#menuUI.init();
         this.#menuUI.show(true);
 
+        SoundManager.playMusic(SoundManager.Musics.START_MUSIC);
     }
 
     gameLoop() {

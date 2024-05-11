@@ -3,6 +3,8 @@ import { Control } from "@babylonjs/gui/2D/controls/control";
 import { TextBlock } from "@babylonjs/gui/2D/controls/textBlock";
 import { GlobalManager, States } from "./globalmanager";
 
+import { SoundManager } from "./soundmanager";
+
 import backgroundImageUrl from "../assets/picture/menu.jpg";
 import backgroundImage2Url from "../assets/picture/menu.jpg";
 import { Image } from "@babylonjs/gui/2D/controls/image";
@@ -64,9 +66,11 @@ class MenuUI {
         this.buttonStart.thickness = 4;
         this.buttonStart.onPointerUpObservable.add(() => {
           console.log("click");
-          if (GlobalManager.gameState == States.STATE_MENU)
+          if (GlobalManager.gameState == States.STATE_MENU){
             //this.hideGUI();
             GlobalManager.gameState = States.STATE_START_GAME;
+            SoundManager.playMusic(SoundManager.Musics.GAME_MUSIC);
+          }
         });
         this.screenUI.addControl(this.buttonStart);
   
