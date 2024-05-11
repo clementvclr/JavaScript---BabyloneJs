@@ -58,9 +58,11 @@ class Game {
 
         this.initInput();
         this.setupUI();
+
         this.#menuUI = new MenuUI();
         await this.#menuUI.init();
         this.#menuUI.show(true);
+
     }
 
     gameLoop() {
