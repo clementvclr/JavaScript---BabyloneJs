@@ -6,10 +6,13 @@ import { SoundManager } from "./soundmanager";
 import floorBumpUrl from "../assets/textures/floor_bump.PNG";
 import { GlobalManager, States } from "./globalmanager";
 import MenuUI from "./menuUI";
+import HavokPhysics from "@babylonjs/havok";
 
 class Game {
     #canvas;
     #engine;
+    #havokInstance;
+
     #player;
     #camera;
     #scene;
@@ -40,7 +43,11 @@ class Game {
 
     async initGame() {
         GlobalManager.gameState = States.STATE_INIT;
+        this.#havokInstance = await this.getInitializedHavok();
+        
+        
         this.#gameScene = await this.createScene();
+        this.#scene.collisionsEnabled = true;
         await SoundManager.init();
         this.#player = new Player(0, 0, 0, 100, this.#gameScene, this.#camera);
         await this.#player.init();
@@ -108,16 +115,6 @@ class Game {
 
         this.#phase += this.#vitesseY * delta;
 
-        this.#sphere.position.y = 2 + Math.sin(this.#phase);
-        this.#sphere.scaling.y = 1 + 0.125 * Math.sin(this.#phase);
-
-        if (this.#player.gameObject.intersectsMesh(this.#zoneA, false)) {
-            console.log("Collision");
-            this.#sphere.material.emissiveColor = Color3.Red();
-        } 
-        else {
-            this.#sphere.material.emissiveColor = Color3.Black();
-        }
     }
 
     endGame() {
@@ -143,6 +140,10 @@ class Game {
 
     createScene() {
         this.#scene = new Scene(this.#engine);
+        const hk = new HavokPlugin(true, this.#havokInstance);
+        // enable physics in the scene with a gravity
+        this.#scene.enablePhysics(new Vector3(0, -9.81, 0), hk);
+
 
         // Création et configuration de l'ArcRotateCamera
         this.#camera = new ArcRotateCamera("arcRotateCam", Math.PI / 2, Math.PI / 4, 10, new Vector3(0, 1, 0), this.#scene);
@@ -170,50 +171,23 @@ class Game {
         const shadowGenerator = new ShadowGenerator(1024, sLight);
         shadowGenerator.useBlurExponentialShadowMap = true;
             
-        const sphere = MeshBuilder.CreateSphere("sphere",
-        {diameter: 2, segments: 32}, this.#scene);
-        sphere.position.y = 1;
-        shadowGenerator.addShadowCaster(sphere); //indique que la sphere crée de l'ombre
-        this.#sphere = sphere;
 
-        const ground = MeshBuilder.CreateGround("ground",
-        {width: 6, height: 6}, this.#scene);
+        const ground = MeshBuilder.CreateGround("ground", { width: 320, height: 320, subdivisions: 128 }, this.scene);
+        ground.position = new Vector3(0, -0.1, 0);
         ground.receiveShadows = true; //reçois l'ombre
+
+        const groundAggregate = new PhysicsAggregate(ground, PhysicsShapeType.BOX, { mass: 0, friction: 0.7, restitution: 0.2 }, GlobalManager.scene);
+        groundAggregate.body.setMotionType(PhysicsMotionType.STATIC);
 
         const matGround = new StandardMaterial("boue", this.#scene);
         matGround.bumpTexture = new Texture(floorBumpUrl);
         ground.material = matGround;
 
-        const matSphere = new StandardMaterial("silver", this.#scene);
-        matSphere.diffuseColor = new Color3(0.8, 0.8, 1);
-        matSphere.specularColor = new Color3(0.4, 0.4, 1);
-        sphere.material = matSphere;
-
-        sphere.actionManager = new ActionManager(this.#scene); 
-        sphere.actionManager.registerAction( new InterpolateValueAction(ActionManager.OnPickTrigger, light, 'diffuse', Color3.Black(), 1000 ) );
-
-        this.#zoneA = MeshBuilder.CreateBox("zoneA", {width:8, height:0.2, depth:8}, this.#scene); 
-        let zoneMat = new StandardMaterial("zoneA", this.#scene); 
-        zoneMat.diffuseColor = Color3.Red(); 
-        zoneMat.alpha = 0.5; 
-        this.#zoneA.material = zoneMat; 
-        this.#zoneA.position = new Vector3(12, 0.1, 12);
-
-        this.#zoneB = MeshBuilder.CreateBox("zoneB", {width:8, height:0.2, depth:8}, this.#scene); 
-        let zoneMatB = new StandardMaterial("zoneB", this.#scene); 
-        zoneMatB.diffuseColor = Color3.Green(); zoneMatB.alpha = 0.5; 
-        this.#zoneB.material = zoneMatB; 
-        this.#zoneB.position = new Vector3(-12, 0.1, -12);
-        sphere.actionManager.registerAction( 
-            new SetValueAction( 
-                {trigger:ActionManager.OnIntersectionEnterTrigger, 
-                    parameter: this.#zoneB }, 
-                    sphere.material, 
-                    'diffuseColor', 
-                    Color3.Green() 
-            ) 
-        );
         return this.#scene;
+    }
+
+    async getInitializedHavok() {
+        return await HavokPhysics();
     }
 
     setupUI() {
