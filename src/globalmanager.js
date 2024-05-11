@@ -32,6 +32,7 @@ class GlobalManager {
         
     }
 }
+
 //Destructuring on ne prends que la propriété statique instance
 const {instance} = GlobalManager;
 export { instance as GlobalManager };

@@ -1,6 +1,6 @@
 import { TransformNode } from "@babylonjs/core";
 import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3, Quaternion } from "@babylonjs/core";
-import player from "../assets/models/playerMJ.glb";
+import player from "../assets/models/player1.glb";
 
 const SPEED = 15.0;
 
@@ -228,6 +228,5 @@ class Player {
             }
         }
     }
-
 }
 export default Player;
