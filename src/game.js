@@ -1,5 +1,5 @@
 import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera,ArcRotateCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
-
+import { AdvancedDynamicTexture, Rectangle, Control, TextBlock } from "@babylonjs/gui";
 import { Inspector } from "@babylonjs/inspector";
 
 import Player from "./player";
@@ -48,8 +48,8 @@ class Game {
         // Définir la position du joueur comme le point cible de l'ArcRotateCamera
         this.#camera.target = this.#player.gameObject.position;
 
-    
         this.initInput();
+        this.setupUI();
     }
 
     gameLoop() {
@@ -199,6 +199,43 @@ class Game {
         );
 
         return this.#scene;
+    }
+
+    setupUI() {
+        const gui = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+        const enduranceBar = new Rectangle();
+        enduranceBar.width = 0.2; // 20% de la largeur de l'écran
+        enduranceBar.height = "40px";
+        enduranceBar.cornerRadius = 20;
+        enduranceBar.color = "white";
+        enduranceBar.thickness = 4;
+        enduranceBar.background = "grey";
+        enduranceBar.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+        enduranceBar.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+        enduranceBar.top = "20px";
+        enduranceBar.left = "-20px"; // Décalage de 20px depuis le bord droit
+        gui.addControl(enduranceBar);
+
+        const enduranceBarFill = new Rectangle();
+        enduranceBarFill.width = `${this.#player.endurance}%`;
+        enduranceBarFill.height = "100%";
+        enduranceBarFill.cornerRadius = 20;
+        enduranceBarFill.background = "blue";
+        enduranceBarFill.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+        enduranceBar.addControl(enduranceBarFill);
+
+        const label = new TextBlock();
+        label.text = "Endurance";
+        label.color = "white";
+        label.height = "30px";
+        label.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+        label.textVerticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+        enduranceBar.addControl(label);
+
+        this.#scene.onBeforeRenderObservable.add(() => {
+            enduranceBarFill.width = `${this.#player.endurance}%`; // Mise à jour de la largeur de la barre en fonction de l'endurance du joueur
+        });
     }
         
 }
