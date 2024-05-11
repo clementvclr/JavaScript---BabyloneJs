@@ -3,7 +3,7 @@ import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera, GlowLa
 import { Inspector } from "@babylonjs/inspector";
 
 import girlHvmodel from "../assets/models/HVGirl.glb";
-import player from "../assets/models/player.glb";
+import player from "../assets/models/playerMJ.glb";
 import { mrdlSliderThumbPixelShader } from "@babylonjs/gui/3D/materials/mrdl/shaders/mrdlSliderThumb.fragment";
 const SPEED = 15.0;
 class Player {
@@ -22,6 +22,7 @@ class Player {
     z = 0.0;
 
     endurance;
+    useEndurance;
 
     model;
 
@@ -36,10 +37,11 @@ class Player {
 
     maxSpeed = 40;  // Vitesse maximale atteignable lors de l'accélération
     accelerationRate = 5;  // Taux d'accélération
-    enduranceConsumptionRate = 20;  // Taux de consommation de l'endurance par seconde lors de l'accélération
+    enduranceConsumptionRate = 25;  // Taux de consommation de l'endurance par seconde lors de l'accélération
     enduranceRegenerationRate = 2;  // Taux de régénération de l'endurance par seconde
 
     animations;
+
 
     constructor(x, y, z, endurance, scene, camera) {
         this.scene = scene;
@@ -49,6 +51,7 @@ class Player {
         this.z = z || 0.0;
         this.animations = {};
         this.endurance = endurance || 100.0;
+        this.useEndurance = true;
         this.transform = new TransformNode("");
         this.transform.position = new Vector3(this.x, this.y, this.z);
         this.gameObject = null;
@@ -83,12 +86,12 @@ class Player {
         this.getInputs( inputMap, actions, delta);
         this.applyCameraToInputs();
         this.move(delta);
-        console.log(this.endurance);
         this.updateUI();
         if (Math.abs(this.moveInput.x) >= 1 || Math.abs(this.moveInput.z) >= 1) {
-            console.log(this.speedX + " - " + this.speedZ);
-            if (inputMap["ShiftLeft"] || inputMap["ShiftRight"]) {
+            if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.useEndurance && inputMap["KeyW"]) {
                 this.playAnimation("fast");
+            } else if(this.moveInput.z < 0){
+                this.playAnimation("back");
             } else {
                 this.playAnimation("run");
             }
@@ -100,28 +103,33 @@ class Player {
 
     getInputs(inputMap, actions,delta) {
         this.moveInput.set(0, 0, 0);
+
         
-        if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.endurance > 0) {
+        if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.endurance > 0 && this.useEndurance && inputMap["KeyW"]) {
             if (inputMap["KeyA"]) {
-                this.moveInput.x = -3;
+                this.moveInput.x = -1;
             }
             else if (inputMap["KeyD"]) {
-                this.moveInput.x = 3;
+                this.moveInput.x = 1;
             }
             if (inputMap["KeyW"]) {
                 this.moveInput.z = 3;
+                this.endurance -= this.enduranceConsumptionRate * delta;
             }
             else if (inputMap["KeyS"]) {
-                this.moveInput.z = -3;
+                this.moveInput.z = -1;
             }
 
             if (actions["Space"]) {
                 this.moveInput.y = 1;
             }
-            this.endurance -= this.enduranceConsumptionRate * delta;
-            if (this.endurance < 0) this.endurance = 0.0;
+            if (this.endurance < 0) {
+                this.useEndurance = false;
+                this.endurance = 0.0;
+            }
         }
         else{
+            if (this.endurance >= 10) this.useEndurance = true;
             if (this.endurance < 100) {
                     this.endurance += this.enduranceRegenerationRate * delta;
                     if (this.endurance > 100) this.endurance = 100.0;
