@@ -1,8 +1,9 @@
 import { TransformNode } from "@babylonjs/core";
-import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
+import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3, Quaternion } from "@babylonjs/core";
 import { Inspector } from "@babylonjs/inspector";
 
 import girlHvmodel from "../assets/models/HVGirl.glb";
+import player from "../assets/models/playerMJ.glb";
 import { mrdlSliderThumbPixelShader } from "@babylonjs/gui/3D/materials/mrdl/shaders/mrdlSliderThumb.fragment";
 const SPEED = 15.0;
 class Player {
@@ -21,6 +22,7 @@ class Player {
     z = 0.0;
 
     endurance;
+    useEndurance;
 
     model;
 
@@ -35,8 +37,11 @@ class Player {
 
     maxSpeed = 40;  // Vitesse maximale atteignable lors de l'accélération
     accelerationRate = 5;  // Taux d'accélération
-    enduranceConsumptionRate = 10;  // Taux de consommation de l'endurance par seconde lors de l'accélération
-    enduranceRegenerationRate = 5;  // Taux de régénération de l'endurance par seconde
+    enduranceConsumptionRate = 25;  // Taux de consommation de l'endurance par seconde lors de l'accélération
+    enduranceRegenerationRate = 2;  // Taux de régénération de l'endurance par seconde
+
+    animations;
+
 
     constructor(x, y, z, endurance, scene, camera) {
         this.scene = scene;
@@ -44,7 +49,9 @@ class Player {
         this.x = x || 0.0;
         this.y = y || 0.0;
         this.z = z || 0.0;
+        this.animations = {};
         this.endurance = endurance || 100.0;
+        this.useEndurance = true;
         this.transform = new TransformNode("");
         this.transform.position = new Vector3(this.x, this.y, this.z);
         this.gameObject = null;
@@ -52,51 +59,99 @@ class Player {
 
     async init() {
         try {
-            const model = await SceneLoader.ImportMeshAsync("", "", girlHvmodel, this.scene);
-            this.gameObject = model.meshes[0];
+            const { meshes, skeletons, animationGroups } = await SceneLoader.ImportMeshAsync("", "", player, this.scene);
+            this.gameObject = meshes[0];
             console.log("Mesh chargé : ", this.gameObject);
-
-            this.gameObject.scaling = new Vector3(0.1, 0.1, 0.1);
             console.log("Nouveau scaling appliqué : ", this.gameObject.scaling);
 
             this.transform = new TransformNode("playerTransform", this.scene);
             this.gameObject.parent = this.transform;
+            console.log(animationGroups);
+            animationGroups.forEach(group => {
+                this.animations[group.name] = group;
+            });
+            console.log(this.animations);
+            this.animations["idle"].play(true);
         } catch (error) {
             console.error("Erreur lors du chargement du modèle : ", error);
         }
+
     }
     //TODO : Faire une separation en fonction afin pouvoir avoir les modficateurs qui seront sélectionner en paramètre
     //TODO : ajouter un paramètre pour la prise en charge des modificateurs
 
     update(inputMap, actions, delta) {
-        this.getInputs( inputMap, actions);
+        // this.deplacement(inputMap, actions, delta); // fonctionne
+        this.transform.position.set(this.x, this.y, this.z);
+        this.getInputs( inputMap, actions, delta);
         this.applyCameraToInputs();
         this.move(delta);
-        console.log(this.endurance);
         this.updateUI();
+        if (Math.abs(this.moveInput.x) >= 1 || Math.abs(this.moveInput.z) >= 1) {
+            if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.useEndurance && inputMap["KeyW"]) {
+                this.playAnimation("fast");
+            } else if(this.moveInput.z < 0){
+                this.playAnimation("back");
+            } else {
+                this.playAnimation("run");
+            }
+        } else {
+            this.playAnimation("idle");
+        }
     }
 
-    getInputs(inputMap, actions) {
+
+    getInputs(inputMap, actions,delta) {
         this.moveInput.set(0, 0, 0);
-        
-        if (inputMap["KeyA"]) {
-            this.moveInput.x = -1;
-        }
-        else if (inputMap["KeyD"]) {
-            this.moveInput.x = 1;
-        }
 
         
-        if (inputMap["KeyW"]) {
-            this.moveInput.z = 1;
-        }
-        else if (inputMap["KeyS"]) {
-            this.moveInput.z = -1;
-        }
+        if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.endurance > 0 && this.useEndurance && inputMap["KeyW"]) {
+            if (inputMap["KeyA"]) {
+                this.moveInput.x = -1;
+            }
+            else if (inputMap["KeyD"]) {
+                this.moveInput.x = 1;
+            }
+            if (inputMap["KeyW"]) {
+                this.moveInput.z = 3;
+                this.endurance -= this.enduranceConsumptionRate * delta;
+            }
+            else if (inputMap["KeyS"]) {
+                this.moveInput.z = -1;
+            }
 
-        if (actions["Space"]) {
-            this.moveInput.y = 1;
+            if (actions["Space"]) {
+                this.moveInput.y = 1;
+            }
+            if (this.endurance < 0) {
+                this.useEndurance = false;
+                this.endurance = 0.0;
+            }
         }
+        else{
+            if (this.endurance >= 10) this.useEndurance = true;
+            if (this.endurance < 100) {
+                    this.endurance += this.enduranceRegenerationRate * delta;
+                    if (this.endurance > 100) this.endurance = 100.0;
+            }
+            if (inputMap["KeyA"]) {
+                this.moveInput.x = -1;
+            }
+            else if (inputMap["KeyD"]) {
+                this.moveInput.x = 1;
+            }
+            if (inputMap["KeyW"]) {
+                this.moveInput.z = 1;
+            }
+            else if (inputMap["KeyS"]) {
+                this.moveInput.z = -1;
+            }
+
+            if (actions["Space"]) {
+                this.moveInput.y = 1;
+            }
+        }
+       
 
         // Appliquer l'accélération avec la touche Shift
         // if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.endurance > 0) {
@@ -139,6 +194,14 @@ class Player {
         // if (this.y < 1) this.y = 1;
     }
    
+    setRotationY(angle) {
+        if (this.gameObject && this.gameObject.rotationQuaternion) {
+            this.gameObject.rotationQuaternion = Quaternion.FromEulerAngles(0, angle, 0);
+        } else if (this.gameObject) {
+            this.gameObject.rotation.y = angle;
+        }
+    }
+
     applyCameraToInputs() {
         
         this.moveDirection.set(0, 0, 0);
@@ -200,9 +263,24 @@ class Player {
     updateUI() {
         document.getElementById('currentSpeed').innerText = `Vitesse: X: ${this.speedX.toFixed(2)}, Y: ${this.speedY.toFixed(2)}, Z: ${this.speedZ.toFixed(2)}`;
         document.getElementById('currentEndurance').innerText = `Endurance: ${this.endurance.toFixed(2)}`;
-        document.getElementById('positionX').innerText = `Position X: ${this.x.toFixed(2)}`;
-        document.getElementById('positionY').innerText = `Position Y: ${this.y.toFixed(2)}`;
-        document.getElementById('positionZ').innerText = `Position Z: ${this.z.toFixed(2)}`;
+        document.getElementById('positionX').innerText = `Position X: ${this.moveInput.x.toFixed(2)}`;
+        document.getElementById('positionY').innerText = `Position Y: ${this.moveInput.y.toFixed(2)}`;
+        document.getElementById('positionZ').innerText = `Position Z: ${this.moveInput.z.toFixed(2)}`;
+    }
+
+    playAnimation(name) {
+        // Arrêter toutes les animations sauf celle à jouer
+        for (let key in this.animations) {
+            if (key === name) {
+                if (!this.animations[key].isPlaying) {
+                    this.animations[key].play(true);
+                    // console.log(name + " animation started.");
+                }
+            } else {
+                this.animations[key].stop();
+                // console.log(key + " animation stopped.");
+            }
+        }
     }
 
 }

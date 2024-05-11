@@ -1,5 +1,5 @@
 import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera,ArcRotateCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
-
+import { AdvancedDynamicTexture, Rectangle, Control, TextBlock } from "@babylonjs/gui";
 import { Inspector } from "@babylonjs/inspector";
 
 import Player from "./player";
@@ -12,6 +12,9 @@ import floorUrl from "../assets/textures/floor.png";
 import floorBumpUrl from "../assets/textures/floor_bump.PNG";
 
 import girlHvmodel from "../assets/models/HVGirl.glb";
+
+import { GlobalManager, States } from "./globalmanager";
+import MenuUI from "./menuUI";
 
 class Game {
     #canvas;
@@ -29,27 +32,35 @@ class Game {
     #zoneA;
     #zoneB;
 
+    #menuUI;
+
     constructor(canvas, engine) {
         this.#canvas = canvas;
         this.#engine = engine;
+        GlobalManager.init(canvas, engine);
     }
 
     async start() {
         await this.initGame();
+        GlobalManager.gameState = States.STATE_MENU;
         this.gameLoop();
         this.endGame();
     }
 
     async initGame() {
+        GlobalManager.gameState = States.STATE_INIT;
         this.#gameScene = await this.createScene();
-        this.#player = new Player(3, 1, 3, 100, this.#gameScene, this.#camera);
+        this.#player = new Player(0, 0, 0, 100, this.#gameScene, this.#camera);
         await this.#player.init();
     
         // Définir la position du joueur comme le point cible de l'ArcRotateCamera
         this.#camera.target = this.#player.gameObject.position;
 
-    
         this.initInput();
+        this.setupUI();
+        this.#menuUI = new MenuUI();
+        await this.#menuUI.init();
+        this.#menuUI.show(true);
     }
 
     gameLoop() {
@@ -67,6 +78,19 @@ class Game {
         }
         this.#engine.runRenderLoop(() => {
             this.updateGame();
+
+            switch (GlobalManager.gameState) {
+                case States.STATE_MENU:
+                    //GlobalManager.gameState = States.STATE_START_GAME;
+                    break;
+                case States.STATE_START_GAME:
+                    this.#menuUI.show(false);
+
+                    GlobalManager.gameState = States.STATE_LEVEL_READY;
+                    break;
+            }
+            
+
             if (this.actions["KeyI"]) { 
                 this.#bInspector = !this.#bInspector; 
                 if (this.#bInspector) 
@@ -85,6 +109,8 @@ class Game {
     updateGame() {
         let delta = this.#engine.getDeltaTime() / 1000.0;
         this.#player.update(this.inputMap, this.actions, delta);
+        this.#player.setRotationY( -this.#camera.alpha - Math.PI / 2);
+        console.log(this.#camera.alpha);
         this.#phase += this.#vitesseY * delta;
         this.#sphere.position.y = 2 + Math.sin(this.#phase);
         this.#sphere.scaling.y = 1 + 0.125 * Math.sin(this.#phase);
@@ -123,6 +149,7 @@ class Game {
 
         // Création et configuration de l'ArcRotateCamera
         this.#camera = new ArcRotateCamera("arcRotateCam", Math.PI / 2, Math.PI / 4, 10, new Vector3(0, 1, 0), this.#scene);
+        this.#camera.alpha = 0;
         this.#camera.lowerBetaLimit = 0.1;  // Limite inférieure de la rotation verticale (en radians)
         this.#camera.upperBetaLimit = Math.PI / 2.1;  // Limite supérieure de la rotation verticale, un peu moins que PI/2 pour éviter de regarder directement vers le bas
         this.#camera.lowerRadiusLimit = 10;  // Limite inférieure de la distance de la caméra
@@ -196,6 +223,43 @@ class Game {
         );
 
         return this.#scene;
+    }
+
+    setupUI() {
+        const gui = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+
+        const enduranceBar = new Rectangle();
+        enduranceBar.width = 0.2; // 20% de la largeur de l'écran
+        enduranceBar.height = "40px";
+        enduranceBar.cornerRadius = 20;
+        enduranceBar.color = "white";
+        enduranceBar.thickness = 4;
+        enduranceBar.background = "grey";
+        enduranceBar.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+        enduranceBar.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+        enduranceBar.top = "20px";
+        enduranceBar.left = "-20px"; // Décalage de 20px depuis le bord droit
+        gui.addControl(enduranceBar);
+
+        const enduranceBarFill = new Rectangle();
+        enduranceBarFill.width = `${this.#player.endurance}%`;
+        enduranceBarFill.height = "100%";
+        enduranceBarFill.cornerRadius = 20;
+        enduranceBarFill.background = "blue";
+        enduranceBarFill.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+        enduranceBar.addControl(enduranceBarFill);
+
+        const label = new TextBlock();
+        label.text = "Endurance";
+        label.color = "white";
+        label.height = "30px";
+        label.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+        label.textVerticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+        enduranceBar.addControl(label);
+
+        this.#scene.onBeforeRenderObservable.add(() => {
+            enduranceBarFill.width = `${this.#player.endurance}%`; // Mise à jour de la largeur de la barre en fonction de l'endurance du joueur
+        });
     }
         
 }
