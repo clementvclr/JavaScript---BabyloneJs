@@ -2,6 +2,7 @@ import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera,ArcRota
 import { AdvancedDynamicTexture, Rectangle, Control, TextBlock } from "@babylonjs/gui";
 import { Inspector } from "@babylonjs/inspector";
 import Player from "./player";
+import Arena from "./arena";
 import { SoundManager } from "./soundmanager";
 import floorBumpUrl from "../assets/textures/floor_bump.PNG";
 import { GlobalManager, States } from "./globalmanager";
