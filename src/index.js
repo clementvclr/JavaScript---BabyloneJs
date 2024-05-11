@@ -1,8 +1,5 @@
 import { Engine } from "@babylonjs/core";
-import { Inspector } from "@babylonjs/inspector";
 import Game from "./game";
-
-import MainMenu from "../assets/picture/menu.jpg";
 
 let canvas;
 let engine;

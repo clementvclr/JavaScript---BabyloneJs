@@ -2,7 +2,6 @@ import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/advancedDynamicTexture
 import { Control } from "@babylonjs/gui/2D/controls/control";
 import { TextBlock } from "@babylonjs/gui/2D/controls/textBlock";
 import { GlobalManager, States } from "./globalmanager";
-
 import backgroundImageUrl from "../assets/picture/menu.jpg";
 import backgroundImage2Url from "../assets/picture/menu.jpg";
 import { Image } from "@babylonjs/gui/2D/controls/image";
@@ -63,22 +62,20 @@ class MenuUI {
         this.buttonStart.cornerRadius = 48;
         this.buttonStart.thickness = 4;
         this.buttonStart.onPointerUpObservable.add(() => {
-          console.log("click");
-          if (GlobalManager.gameState == States.STATE_MENU)
-            //this.hideGUI();
-            GlobalManager.gameState = States.STATE_START_GAME;
-        });
-        this.screenUI.addControl(this.buttonStart);
-  
 
+        if (GlobalManager.gameState == States.STATE_MENU)
+          //this.hideGUI();
+          GlobalManager.gameState = States.STATE_START_GAME;});
+        
+        this.screenUI.addControl(this.buttonStart);
         this.show(false);
     
-
         window.onresize = () => {
           this.getCanvasSize();
           this.fixTextScale();
         }
       }
+
       show(bActive) {
         this.screenUI.rootContainer.isVisible = bActive;
         if (bActive)
@@ -87,14 +84,9 @@ class MenuUI {
           this.screenUI.background = "";
       }
 
-    
       getCanvasSize() {
         GlobalManager.canvasWidth = document.querySelector("canvas").width;
         GlobalManager.canvasHeight = document.querySelector("canvas").height;
       }
-    
-      fixTextScale() {
-      }
 }
-
 export default MenuUI;

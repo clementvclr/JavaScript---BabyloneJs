@@ -1,11 +1,9 @@
 import { TransformNode } from "@babylonjs/core";
 import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3, Quaternion } from "@babylonjs/core";
-import { Inspector } from "@babylonjs/inspector";
-
-import girlHvmodel from "../assets/models/HVGirl.glb";
 import player from "../assets/models/playerMJ.glb";
-import { mrdlSliderThumbPixelShader } from "@babylonjs/gui/3D/materials/mrdl/shaders/mrdlSliderThumb.fragment";
+
 const SPEED = 15.0;
+
 class Player {
 
     scene;
@@ -24,8 +22,6 @@ class Player {
     endurance;
     useEndurance;
 
-    model;
-
     //vecteur d'input
     moveInput = new Vector3(0,0,0);
     //vecteur de deplacement
@@ -41,7 +37,6 @@ class Player {
     enduranceRegenerationRate = 2;  // Taux de régénération de l'endurance par seconde
 
     animations;
-
 
     constructor(x, y, z, endurance, scene, camera) {
         this.scene = scene;
@@ -61,18 +56,16 @@ class Player {
         try {
             const { meshes, skeletons, animationGroups } = await SceneLoader.ImportMeshAsync("", "", player, this.scene);
             this.gameObject = meshes[0];
-            console.log("Mesh chargé : ", this.gameObject);
-            console.log("Nouveau scaling appliqué : ", this.gameObject.scaling);
 
             this.transform = new TransformNode("playerTransform", this.scene);
             this.gameObject.parent = this.transform;
-            console.log(animationGroups);
+
             animationGroups.forEach(group => {
                 this.animations[group.name] = group;
             });
-            console.log(this.animations);
             this.animations["idle"].play(true);
-        } catch (error) {
+        } 
+        catch (error) {
             console.error("Erreur lors du chargement du modèle : ", error);
         }
 
@@ -81,12 +74,12 @@ class Player {
     //TODO : ajouter un paramètre pour la prise en charge des modificateurs
 
     update(inputMap, actions, delta) {
-        // this.deplacement(inputMap, actions, delta); // fonctionne
         this.transform.position.set(this.x, this.y, this.z);
         this.getInputs( inputMap, actions, delta);
         this.applyCameraToInputs();
         this.move(delta);
         this.updateUI();
+        
         if (Math.abs(this.moveInput.x) >= 1 || Math.abs(this.moveInput.z) >= 1) {
             if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.useEndurance && inputMap["KeyW"]) {
                 this.playAnimation("fast");
@@ -95,11 +88,11 @@ class Player {
             } else {
                 this.playAnimation("run");
             }
-        } else {
+        } 
+        else {
             this.playAnimation("idle");
         }
     }
-
 
     getInputs(inputMap, actions,delta) {
         this.moveInput.set(0, 0, 0);
@@ -151,47 +144,6 @@ class Player {
                 this.moveInput.y = 1;
             }
         }
-       
-
-        // Appliquer l'accélération avec la touche Shift
-        // if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.endurance > 0) {
-        //     let accelerationFactor = 2;  // Multiplicateur de la vitesse lors de l'accélération
-        //     targetSpeedX *= accelerationFactor;
-        //     targetSpeedZ *= accelerationFactor;
-
-        //     this.endurance -= this.enduranceConsumptionRate * delta;
-        //     if (this.endurance < 0) this.endurance = 0.0;
-        // }
-
-        // Gestion de l'endurance sans accélération
-        // else {
-        //     if (this.endurance < 100) {
-        //         this.endurance += this.enduranceRegenerationRate * delta;
-        //         if (this.endurance > 100) this.endurance = 100.0;
-        //     }
-        // }
-
-
-        // this.speedX = Math.max(Math.min(this.speedX, this.maxSpeed), -this.maxSpeed);  // Limite pour speedX
-        // this.speedZ = Math.max(Math.min(this.speedZ, this.maxSpeed), -this.maxSpeed);  // Limite pour speedZ
-
-
-        // // Appliquer un facteur de lissage pour les vitesses 
-        // this.speedX += (targetSpeedX - this.speedX) * this.accelerationRate * delta;
-        // this.speedZ += (targetSpeedZ - this.speedZ) * this.accelerationRate * delta;
-
-        // // Mouvement
-        // this.x += this.speedX * delta;
-        // this.z += this.speedZ * delta;
-
-        // // Gestion du saut
-        // if (actions["Space"] && this.y <= 2.0 && this.speedY < 0) this.speedY = 50.0;
-        // //Check collisions 
-        // if (this.x > 400) this.x = 400;
-        // else if (this.x < -400) this.x = -400;
-        // if (this.z > 400) this.z = 400;
-        // else if (this.z < -400) this.z = -400;
-        // if (this.y < 1) this.y = 1;
     }
    
     setRotationY(angle) {
@@ -222,20 +174,16 @@ class Player {
 
             //Add les deux vect
             this.moveDirection = right.add(forward);
-
-            this.moveDirection.normalize();
-
             
+            //normalise
+            this.moveDirection.normalize();
         }
     }
 
     move(delta){
         if (this.moveDirection.length() !== 0) {
-
             this.moveDirection.scaleInPlace(SPEED * delta);
-
-            this.gameObject.position.addInPlace(this.moveDirection);
-            
+            this.gameObject.position.addInPlace(this.moveDirection);       
         }
     }
 
@@ -274,15 +222,12 @@ class Player {
             if (key === name) {
                 if (!this.animations[key].isPlaying) {
                     this.animations[key].play(true);
-                    // console.log(name + " animation started.");
                 }
             } else {
                 this.animations[key].stop();
-                // console.log(key + " animation stopped.");
             }
         }
     }
 
 }
-
 export default Player;

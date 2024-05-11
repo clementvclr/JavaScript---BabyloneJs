@@ -1,18 +1,8 @@
 import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera,ArcRotateCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
 import { AdvancedDynamicTexture, Rectangle, Control, TextBlock } from "@babylonjs/gui";
 import { Inspector } from "@babylonjs/inspector";
-
 import Player from "./player";
-
-// Sert à importer des modeles situer dans le dossier du projetc:\Users\ahmed\Downloads\car.glb
-import meshUrl from "../assets/models/HVGirl.glb";
-import theatreUrl from "../assets/models/low_poly_bolshoi_theatre.glb";
-
-import floorUrl from "../assets/textures/floor.png";
 import floorBumpUrl from "../assets/textures/floor_bump.PNG";
-
-import girlHvmodel from "../assets/models/HVGirl.glb";
-
 import { GlobalManager, States } from "./globalmanager";
 import MenuUI from "./menuUI";
 
@@ -20,7 +10,7 @@ class Game {
     #canvas;
     #engine;
     #player;
-    #camera;  // Utilisation de la caméra comme propriété de la classe
+    #camera;
     #scene;
     #bInspector = false;
     inputMap = {};
@@ -62,7 +52,6 @@ class Game {
         this.#menuUI = new MenuUI();
         await this.#menuUI.init();
         this.#menuUI.show(true);
-
     }
 
     gameLoop() {
@@ -82,16 +71,16 @@ class Game {
             this.updateGame();
 
             switch (GlobalManager.gameState) {
+                
                 case States.STATE_MENU:
-                    //GlobalManager.gameState = States.STATE_START_GAME;
                     break;
+                
                 case States.STATE_START_GAME:
                     this.#menuUI.show(false);
 
                     GlobalManager.gameState = States.STATE_LEVEL_READY;
                     break;
-            }
-            
+            }           
 
             if (this.actions["KeyI"]) { 
                 this.#bInspector = !this.#bInspector; 
@@ -100,27 +89,29 @@ class Game {
                 else 
                     Inspector.Hide(); 
             }
+
             this.actions = {};
-            
             divFps.innerHTML = `${this.#engine.getFps().toFixed()} fps`;
             this.#gameScene.render();
-        });
-            
+        });           
     }
 
     updateGame() {
         let delta = this.#engine.getDeltaTime() / 1000.0;
+
         this.#player.update(this.inputMap, this.actions, delta);
         this.#player.setRotationY( -this.#camera.alpha - Math.PI / 2);
-        console.log(this.#camera.alpha);
+
         this.#phase += this.#vitesseY * delta;
+
         this.#sphere.position.y = 2 + Math.sin(this.#phase);
         this.#sphere.scaling.y = 1 + 0.125 * Math.sin(this.#phase);
 
         if (this.#player.gameObject.intersectsMesh(this.#zoneA, false)) {
             console.log("Collision");
             this.#sphere.material.emissiveColor = Color3.Red();
-        } else {
+        } 
+        else {
             this.#sphere.material.emissiveColor = Color3.Black();
         }
     }
@@ -136,6 +127,7 @@ class Game {
                     this.inputMap[kbInfo.event.code] = true;
                     console.log(`KEY DOWN: ${kbInfo.event.code} / ${kbInfo.event.key}`);
                     break;
+                
                 case KeyboardEventTypes.KEYUP:
                     this.inputMap[kbInfo.event.code] = false;
                     this.actions[kbInfo.event.code] = true;
@@ -143,8 +135,7 @@ class Game {
                     break;
             }
         });
-    }
-        
+    }   
 
     createScene() {
         this.#scene = new Scene(this.#engine);
@@ -159,15 +150,13 @@ class Game {
 
         // Attacher la caméra au canvas pour permettre la rotation contrôlée par la souris
         this.#camera.attachControl(this.#canvas, true);
-
-    
+   
         // Événement de mouvement de la souris pour ajuster la rotationOffset
         this.#canvas.addEventListener('mousemove', (event) => {
             if (event.buttons === 1) {  // Bouton gauche de la souris maintenu
                 this.#camera.rotationOffset += event.movementX * 0.1;
             }
         });
-
 
         const light = new HemisphericLight("light", new Vector3(0, 1, 0), this.#scene);
         light.intensity = 0.7;
@@ -177,7 +166,6 @@ class Game {
         const shadowGenerator = new ShadowGenerator(1024, sLight);
         shadowGenerator.useBlurExponentialShadowMap = true;
             
-
         const sphere = MeshBuilder.CreateSphere("sphere",
         {diameter: 2, segments: 32}, this.#scene);
         sphere.position.y = 1;
@@ -189,7 +177,6 @@ class Game {
         ground.receiveShadows = true; //reçois l'ombre
 
         const matGround = new StandardMaterial("boue", this.#scene);
-        //matGround.diffuseTexture = new Texture(floorUrl);
         matGround.bumpTexture = new Texture(floorBumpUrl);
         ground.material = matGround;
 
@@ -197,7 +184,6 @@ class Game {
         matSphere.diffuseColor = new Color3(0.8, 0.8, 1);
         matSphere.specularColor = new Color3(0.4, 0.4, 1);
         sphere.material = matSphere;
-
 
         sphere.actionManager = new ActionManager(this.#scene); 
         sphere.actionManager.registerAction( new InterpolateValueAction(ActionManager.OnPickTrigger, light, 'diffuse', Color3.Black(), 1000 ) );
@@ -223,14 +209,14 @@ class Game {
                     Color3.Green() 
             ) 
         );
-
         return this.#scene;
     }
 
     setupUI() {
+        
         const gui = AdvancedDynamicTexture.CreateFullscreenUI("UI");
-
         const enduranceBar = new Rectangle();
+        
         enduranceBar.width = 0.2; // 20% de la largeur de l'écran
         enduranceBar.height = "40px";
         enduranceBar.cornerRadius = 20;
@@ -262,8 +248,6 @@ class Game {
         this.#scene.onBeforeRenderObservable.add(() => {
             enduranceBarFill.width = `${this.#player.endurance}%`; // Mise à jour de la largeur de la barre en fonction de l'endurance du joueur
         });
-    }
-        
+    }      
 }
-
 export default Game;
