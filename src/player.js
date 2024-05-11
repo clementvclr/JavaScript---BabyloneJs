@@ -106,7 +106,7 @@ class Player {
                 this.moveInput.x = 1;
             }
             if (inputMap["KeyW"]) {
-                this.moveInput.z = 3;
+                this.moveInput.z = 5;
                 this.endurance -= this.enduranceConsumptionRate * delta;
             }
             else if (inputMap["KeyS"]) {
@@ -134,7 +134,7 @@ class Player {
                 this.moveInput.x = 1;
             }
             if (inputMap["KeyW"]) {
-                this.moveInput.z = 1;
+                this.moveInput.z = 2;
             }
             else if (inputMap["KeyS"]) {
                 this.moveInput.z = -1;

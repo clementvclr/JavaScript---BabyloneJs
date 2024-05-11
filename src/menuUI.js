@@ -2,12 +2,9 @@ import { AdvancedDynamicTexture } from "@babylonjs/gui/2D/advancedDynamicTexture
 import { Control } from "@babylonjs/gui/2D/controls/control";
 import { TextBlock } from "@babylonjs/gui/2D/controls/textBlock";
 import { GlobalManager, States } from "./globalmanager";
-<<<<<<< HEAD
 
 import { SoundManager } from "./soundmanager";
 
-=======
->>>>>>> 4959071ad0923bcb08ad1fd857344bd91af57ffa
 import backgroundImageUrl from "../assets/picture/menu.jpg";
 import backgroundImage2Url from "../assets/picture/menu.jpg";
 import { Image } from "@babylonjs/gui/2D/controls/image";

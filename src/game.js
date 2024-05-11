@@ -5,10 +5,6 @@ import Player from "./player";
 import { SoundManager } from "./soundmanager";
 
 // Sert à importer des modeles situer dans le dossier du projetc:\Users\ahmed\Downloads\car.glb
-import meshUrl from "../assets/models/HVGirl.glb";
-import theatreUrl from "../assets/models/low_poly_bolshoi_theatre.glb";
-
-import floorUrl from "../assets/textures/floor.png";
 import floorBumpUrl from "../assets/textures/floor_bump.PNG";
 import { GlobalManager, States } from "./globalmanager";
 import MenuUI from "./menuUI";
