@@ -271,8 +271,7 @@ class Game {
 
                 tree.scaling = new Vector3(7, 7, 7); 
     
-                // Rotation si nécessaire (en radians)
-                tree.rotation.y = Math.PI / 4;  // Rotation de 45 degrés, par exemple
+                tree.rotation.y = Math.PI / 4;
             }
         );
     }
@@ -287,10 +286,8 @@ class Game {
                 let tree = meshes[0];
                 tree.position = position;
 
-                tree.scaling = new Vector3(8, 8, 8); 
-    
-                // Rotation si nécessaire (en radians)
-                tree.rotation.y = Math.PI / 4;  // Rotation de 45 degrés, par exemple
+                tree.scaling = new Vector3(8, 8, 8);
+                tree.rotation.y = Math.PI / 4;
             }
         );
     }
