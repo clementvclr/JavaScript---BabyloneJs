@@ -2,6 +2,7 @@ import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera,ArcRota
 import { AdvancedDynamicTexture, Rectangle, Control, TextBlock, Image } from "@babylonjs/gui";
 import { Inspector } from "@babylonjs/inspector";
 import Player from "./player";
+import Arena from "./arena";
 import { SoundManager } from "./soundmanager";
 import floor from "../assets/textures/grass.png";
 import treeUrl from "../assets/models/tree.glb";
@@ -10,11 +11,15 @@ import natureUrl from "../assets/models/natureFloor.glb";
 import floorBumpUrl from "../assets/textures/floor_bump.PNG";
 import { GlobalManager, States } from "./globalmanager";
 import MenuUI from "./menuUI";
+import HavokPhysics from "@babylonjs/havok";
 
 class Game {
     #canvas;
     #engine;
+    #havokInstance;
+
     #player;
+    #arena;
     #camera;
     #scene;
     #bInspector = false;
@@ -50,7 +55,11 @@ class Game {
 
     async initGame() {
         GlobalManager.gameState = States.STATE_INIT;
+        this.#havokInstance = await this.getInitializedHavok();
+        
+        
         this.#gameScene = await this.createScene();
+        this.#scene.collisionsEnabled = true;
         await SoundManager.init();
         this.#player = new Player(0, 0, 0, 100, this.#gameScene, this.#camera);
         await this.#player.init();
@@ -83,7 +92,7 @@ class Game {
                 Inspector.Hide(); 
         }
         this.#engine.runRenderLoop(() => {
-            this.updateGame();
+            
 
             switch (GlobalManager.gameState) {
                 
@@ -92,7 +101,7 @@ class Game {
                 
                 case States.STATE_START_GAME:
                     this.#menuUI.show(false);
-
+                    this.updateGame();
                     GlobalManager.gameState = States.STATE_LEVEL_READY;
                     break;
             }           
@@ -143,6 +152,10 @@ class Game {
 
     createScene() {
         this.#scene = new Scene(this.#engine);
+        const hk = new HavokPlugin(true, this.#havokInstance);
+        // enable physics in the scene with a gravity
+        this.#scene.enablePhysics(new Vector3(0, -9.81, 0), hk);
+
 
         // Création et configuration de l'ArcRotateCamera
         this.#camera = new ArcRotateCamera("arcRotateCam", Math.PI / 2, Math.PI / 4, 10, new Vector3(0, 1, 0), this.#scene);
@@ -270,6 +283,10 @@ class Game {
                 tree.rotation.y = Math.PI / 4;  // Rotation de 45 degrés, par exemple
             }
         );
+    }
+
+    async getInitializedHavok() {
+        return await HavokPhysics();
     }
 
     setupUI() {
