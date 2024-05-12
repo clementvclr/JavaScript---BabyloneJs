@@ -75,7 +75,6 @@ class MenuUI {
     
         window.onresize = () => {
           this.getCanvasSize();
-          this.fixTextScale();
         }
       }
 

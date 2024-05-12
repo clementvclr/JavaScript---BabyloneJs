@@ -79,7 +79,7 @@ class Game {
                 Inspector.Hide(); 
         }
         this.#engine.runRenderLoop(() => {
-            this.updateGame();
+            
 
             switch (GlobalManager.gameState) {
                 
@@ -88,7 +88,7 @@ class Game {
                 
                 case States.STATE_START_GAME:
                     this.#menuUI.show(false);
-
+                    this.updateGame();
                     GlobalManager.gameState = States.STATE_LEVEL_READY;
                     break;
             }           

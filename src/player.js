@@ -1,8 +1,12 @@
 import { TransformNode } from "@babylonjs/core";
 import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3, Quaternion } from "@babylonjs/core";
 import player from "../assets/models/player1.glb";
+import { GlobalManager, PhysMasks } from "./globalmanager";
 
 const SPEED = 15.0;
+const USE_FORCES = true;
+const PLAYER_HEIGHT = 1.7;
+const PLAYER_RADIUS = 0.4;
 
 class Player {
 
@@ -10,6 +14,8 @@ class Player {
     camera;
 
     transform;
+
+    capsulAggregate;
 
     axes;
 
@@ -38,38 +44,88 @@ class Player {
 
     animations;
 
+    bWalking = false;
+    bOnGround = false;
+    bFalling = false;
+    bJumping = false;
+
+    idleAnim;
+    runAnim;
+    walkAnim;
+    backAnim;
+
     constructor(x, y, z, endurance, scene, camera) {
         this.scene = scene;
         this.camera = camera;
         this.x = x || 0.0;
         this.y = y || 0.0;
         this.z = z || 0.0;
-        this.animations = {};
+        this.transform = new MeshBuilder.CreateCapsule("player", { height: PLAYER_HEIGHT, radius: PLAYER_RADIUS }, this.scene);
+        this.transform.visibility = 0.0;
+        this.transform.position = new Vector3(this.x, this.y, this.z);
+        
         this.endurance = endurance || 100.0;
         this.useEndurance = true;
-        this.transform = new TransformNode("");
-        this.transform.position = new Vector3(this.x, this.y, this.z);
-        this.gameObject = null;
+
     }
 
     async init() {
-        try {
-            const { meshes, skeletons, animationGroups } = await SceneLoader.ImportMeshAsync("", "", player, this.scene);
-            this.gameObject = meshes[0];
+        //On cré le mesh et on l'attache à notre parent
+        const result = await SceneLoader.ImportMeshAsync("", "", player, this.scene);
+        this.gameObject = result.meshes[0];
+        this.gameObject.scaling = new Vector3(1, 1, 1);
+        this.gameObject.position = new Vector3(0, -PLAYER_HEIGHT / 2, 0);
+        this.gameObject.rotate(Vector3.UpReadOnly, Math.PI);
+        this.gameObject.bakeCurrentTransformIntoVertices();
 
-            this.transform = new TransformNode("playerTransform", this.scene);
-            this.gameObject.parent = this.transform;
+        this.capsuleAggregate = new PhysicsAggregate(this.transform, PhysicsShapeType.CAPSULE, { mass: 1, friction: 1, restitution: 0.1 }, this.scene);
+        this.capsuleAggregate.body.setMotionType(PhysicsMotionType.DYNAMIC);
 
-            animationGroups.forEach(group => {
-                this.animations[group.name] = group;
-            });
-            this.animations["idle"].play(true);
-        } 
-        catch (error) {
-            console.error("Erreur lors du chargement du modèle : ", error);
+        this.capsuleAggregate.body.setMassProperties({
+            inertia: new Vector3(0, 0, 0),
+            centerOfMass: new Vector3(0, PLAYER_HEIGHT / 2, 0),
+            mass: 1,
+            inertiaOrientation: new Quaternion(0, 0, 0, 1)
+        });
+
+        //On annule tous les frottements, on laisse le IF pour penser qu'on peut changer suivant le contexte
+        if (USE_FORCES) {
+            this.capsuleAggregate.body.setLinearDamping(0.0);
+            this.capsuleAggregate.body.setAngularDamping(0.0);
+        }
+        else {
+            this.capsuleAggregate.body.setLinearDamping(0);
+            this.capsuleAggregate.body.setAngularDamping(0.0);
         }
 
+        this.gameObject.parent = this.transform;
+        this.animationsGroup = result.animationGroups;
+        this.animationsGroup[0].stop();
+        this.idleAnim = this.scene.getAnimationGroupByName('idle');
+        this.runAnim = this.scene.getAnimationGroupByName('fast');
+        this.walkAnim = this.scene.getAnimationGroupByName('run');
+        this.backAnim = this.scene.getAnimationGroupByName('back');
+        this.idleAnim.start(true, 1.0, this.idleAnim.from, this.idleAnim.to, false);
     }
+
+    checkGround() {
+        let ret = false;
+
+        var rayOrigin = this.transform.absolutePosition;
+        var ray1Dir = Vector3.Down();
+        var ray1Len = (PLAYER_HEIGHT / 2) + 0.1;
+        var ray1Dest = rayOrigin.add(ray1Dir.scale(ray1Len));
+
+        const raycastResult = this.scene.getPhysicsEngine().raycast(rayOrigin, ray1Dest, PhysMasks.PHYS_MASK_GROUND);
+        if (raycastResult.hasHit) {
+            if (!this.bOnGround)
+                console.log("Grounded");
+            ret = true;
+        }
+        return ret;
+    }
+
+
     //TODO : Faire une separation en fonction afin pouvoir avoir les modficateurs qui seront sélectionner en paramètre
     //TODO : ajouter un paramètre pour la prise en charge des modificateurs
 
@@ -95,55 +151,31 @@ class Player {
     }
 
     getInputs(inputMap, actions,delta) {
-        this.moveInput.set(0, 0, 0);
+        // Calcul des forces basées sur les entrées
+    let force = new Vector3(0, 0, 0);
+    if (inputMap["KeyW"]) {
+        force.z += 10; // Poussée vers l'avant
+    }
+    if (inputMap["KeyS"]) {
+        force.z -= 5; // Poussée vers l'arrière
+    }
+    if (inputMap["KeyA"]) {
+        force.x -= 5; // Poussée vers la gauche
+    }
+    if (inputMap["KeyD"]) {
+        force.x += 5; // Poussée vers la droite
+    }
 
+    // Application de la friction
+    this.velocity.multiplyScalar(0.9); // Friction qui ralentit la vitesse
+
+    // Calcul de l'accélération basée sur la force et la masse
+    let acceleration = force.divideScalar(this.mass);
+
+    // Mise à jour de la vitesse et de la position
+    this.velocity.add(acceleration.multiplyScalar(delta));
+    this.position.add(this.velocity.multiplyScalar(delta));
         
-        if ((inputMap["ShiftLeft"] || inputMap["ShiftRight"]) && this.endurance > 0 && this.useEndurance && inputMap["KeyW"]) {
-            if (inputMap["KeyA"]) {
-                this.moveInput.x = -1;
-            }
-            else if (inputMap["KeyD"]) {
-                this.moveInput.x = 1;
-            }
-            if (inputMap["KeyW"]) {
-                this.moveInput.z = 5;
-                this.endurance -= this.enduranceConsumptionRate * delta;
-            }
-            else if (inputMap["KeyS"]) {
-                this.moveInput.z = -1;
-            }
-
-            if (actions["Space"]) {
-                this.moveInput.y = 1;
-            }
-            if (this.endurance < 0) {
-                this.useEndurance = false;
-                this.endurance = 0.0;
-            }
-        }
-        else{
-            if (this.endurance >= 10) this.useEndurance = true;
-            if (this.endurance < 100) {
-                    this.endurance += this.enduranceRegenerationRate * delta;
-                    if (this.endurance > 100) this.endurance = 100.0;
-            }
-            if (inputMap["KeyA"]) {
-                this.moveInput.x = -1;
-            }
-            else if (inputMap["KeyD"]) {
-                this.moveInput.x = 1;
-            }
-            if (inputMap["KeyW"]) {
-                this.moveInput.z = 2;
-            }
-            else if (inputMap["KeyS"]) {
-                this.moveInput.z = -1;
-            }
-
-            if (actions["Space"]) {
-                this.moveInput.y = 1;
-            }
-        }
     }
    
     setRotationY(angle) {
@@ -185,6 +217,7 @@ class Player {
             this.moveDirection.scaleInPlace(SPEED * delta);
             this.gameObject.position.addInPlace(this.moveDirection);       
         }
+        
     }
 
     getUpVector(_mesh) {
