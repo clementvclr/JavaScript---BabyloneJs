@@ -1,8 +1,12 @@
-import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera,ArcRotateCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3 } from "@babylonjs/core";
-import { AdvancedDynamicTexture, Rectangle, Control, TextBlock } from "@babylonjs/gui";
+import { ActionManager, Color3, Color4, Engine, FollowCamera, FreeCamera,ArcRotateCamera, GlowLayer, HavokPlugin, HemisphericLight, InterpolateValueAction, KeyboardEventTypes, Mesh, MeshBuilder, ParticleSystem, PhysicsAggregate, PhysicsHelper, PhysicsMotionType, PhysicsRadialImpulseFalloff, PhysicsShapeType, Scalar, Scene, SceneLoader, SetValueAction, ShadowGenerator, SpotLight, StandardMaterial, Texture, Vector3, ExecuteCodeAction } from "@babylonjs/core";
+import { AdvancedDynamicTexture, Rectangle, Control, TextBlock, Image } from "@babylonjs/gui";
 import { Inspector } from "@babylonjs/inspector";
 import Player from "./player";
 import { SoundManager } from "./soundmanager";
+import floor from "../assets/textures/grass.png";
+import treeUrl from "../assets/models/tree.glb";
+import guideUrl from "../assets/picture/guide.png";
+import natureUrl from "../assets/models/natureFloor.glb";
 import floorBumpUrl from "../assets/textures/floor_bump.PNG";
 import { GlobalManager, States } from "./globalmanager";
 import MenuUI from "./menuUI";
@@ -17,17 +21,23 @@ class Game {
     inputMap = {};
     actions = {};
     #gameScene;
-    #sphere;
+    
     #phase = 0.0;
     #vitesseY = 0.0018;
-    #zoneA;
-    #zoneB;
 
+    modelsCache = {};
+    
     #menuUI;
+    #startTime = 0;
+    #bestTime = Infinity;
+    #timerActive = false;
+
+    #groundLength = 1000;
 
     constructor(canvas, engine) {
         this.#canvas = canvas;
         this.#engine = engine;
+        this.modelsCache ={};
         GlobalManager.init(canvas, engine);
     }
 
@@ -47,7 +57,8 @@ class Game {
     
         // Définir la position du joueur comme le point cible de l'ArcRotateCamera
         this.#camera.target = this.#player.gameObject.position;
-
+        
+        // this.createTriggers();
         this.initInput();
         this.setupUI();
 
@@ -59,9 +70,9 @@ class Game {
     }
 
     gameLoop() {
-        if (!this.#camera) {
-            console.error("Camera not initialized.");
-            return; // Stop ou reportez le gameLoop jusqu'à ce que la caméra soit prête
+        if (!this.#camera || !this.#gameScene) {
+            console.error("Camera or Game Scene not initialized.");
+            return; // Stop ou reportez le gameLoop jusqu'à ce que la caméra et la scène soient prêtes
         }
         const divFps = document.getElementById("fps");
         if (this.actions["KeyI"]) { 
@@ -107,17 +118,6 @@ class Game {
         this.#player.setRotationY( -this.#camera.alpha - Math.PI / 2);
 
         this.#phase += this.#vitesseY * delta;
-
-        this.#sphere.position.y = 2 + Math.sin(this.#phase);
-        this.#sphere.scaling.y = 1 + 0.125 * Math.sin(this.#phase);
-
-        if (this.#player.gameObject.intersectsMesh(this.#zoneA, false)) {
-            console.log("Collision");
-            this.#sphere.material.emissiveColor = Color3.Red();
-        } 
-        else {
-            this.#sphere.material.emissiveColor = Color3.Black();
-        }
     }
 
     endGame() {
@@ -169,59 +169,114 @@ class Game {
             1, -1), 1.2, 24, this.#scene);
         const shadowGenerator = new ShadowGenerator(1024, sLight);
         shadowGenerator.useBlurExponentialShadowMap = true;
-            
-        const sphere = MeshBuilder.CreateSphere("sphere",
-        {diameter: 2, segments: 32}, this.#scene);
-        sphere.position.y = 1;
-        shadowGenerator.addShadowCaster(sphere); //indique que la sphere crée de l'ombre
-        this.#sphere = sphere;
 
-        const ground = MeshBuilder.CreateGround("ground",
-        {width: 6, height: 6}, this.#scene);
-        ground.receiveShadows = true; //reçois l'ombre
+        // Création du plan qui servira de terrain
+        const ground = MeshBuilder.CreateGround("ground", {width: 120, height: this.#groundLength}, this.scene);
+        ground.position.x = 0;
+        ground.position.y = 0 ;
+        ground.position.z = -400;
 
-        const matGround = new StandardMaterial("boue", this.#scene);
-        matGround.bumpTexture = new Texture(floorBumpUrl);
-        ground.material = matGround;
+        // Création du matériau et chargement de la texture
+        const groundMaterial = new StandardMaterial("groundMaterial", this.scene);
+        groundMaterial.diffuseTexture = new Texture(floor, this.scene);
+        
+        ground.material = groundMaterial;
+        
+        // Ajustements optionnels
+        ground.material.diffuseTexture.uScale = 15; // Répétition de la texture en U
+        ground.material.diffuseTexture.vScale = 90; // Répétition de la texture en V
+        ground.receiveShadows = true; // Pour recevoir des ombres si nécessaire
 
-        const matSphere = new StandardMaterial("silver", this.#scene);
-        matSphere.diffuseColor = new Color3(0.8, 0.8, 1);
-        matSphere.specularColor = new Color3(0.4, 0.4, 1);
-        sphere.material = matSphere;
+        
+        for(let i = 0; i < 25; i++){
+            this.loadTree(this.#scene, new Vector3(45,0,90 - (i*25)));
+            this.loadTree(this.#scene, new Vector3(-45,0,90 - (i*25)));
+        }
+        this.loadTree(this.#scene, new Vector3(15,0,90));
+        this.loadTree(this.#scene, new Vector3(30,0,90));
+        this.loadTree(this.#scene, new Vector3(0,0,90));
+        this.loadTree(this.#scene, new Vector3(-30,0,90));
+        this.loadTree(this.#scene, new Vector3(-15,0,90));
+        this.loadTree(this.#scene, new Vector3(30,0,-879));
+        this.loadTree(this.#scene, new Vector3(15,0,-879));
+        this.loadTree(this.#scene, new Vector3(0,0,-879));
+        this.loadTree(this.#scene, new Vector3(-30,0,-879));
+        this.loadTree(this.#scene, new Vector3(-15,0,-879));
 
-        sphere.actionManager = new ActionManager(this.#scene); 
-        sphere.actionManager.registerAction( new InterpolateValueAction(ActionManager.OnPickTrigger, light, 'diffuse', Color3.Black(), 1000 ) );
+        for(let i = 0; i < 20; i++){
+            this.loadNature(this.#scene, new Vector3(15,0,70 - (i*60)));
+            this.loadNature(this.#scene, new Vector3(-15,0,70 - (i*60)));
+        }
 
-        this.#zoneA = MeshBuilder.CreateBox("zoneA", {width:8, height:0.2, depth:8}, this.#scene); 
-        let zoneMat = new StandardMaterial("zoneA", this.#scene); 
-        zoneMat.diffuseColor = Color3.Red(); 
-        zoneMat.alpha = 0.5; 
-        this.#zoneA.material = zoneMat; 
-        this.#zoneA.position = new Vector3(12, 0.1, 12);
-
-        this.#zoneB = MeshBuilder.CreateBox("zoneB", {width:8, height:0.2, depth:8}, this.#scene); 
-        let zoneMatB = new StandardMaterial("zoneB", this.#scene); 
-        zoneMatB.diffuseColor = Color3.Green(); zoneMatB.alpha = 0.5; 
-        this.#zoneB.material = zoneMatB; 
-        this.#zoneB.position = new Vector3(-12, 0.1, -12);
-        sphere.actionManager.registerAction( 
-            new SetValueAction( 
-                {trigger:ActionManager.OnIntersectionEnterTrigger, 
-                    parameter: this.#zoneB }, 
-                    sphere.material, 
-                    'diffuseColor', 
-                    Color3.Green() 
-            ) 
-        );
         return this.#scene;
     }
 
+    createTriggers() {
+        // Matériau pour les triggers
+        const visibleMaterial = new StandardMaterial("triggerMat", this.#scene);
+        visibleMaterial.diffuseColor = new Color3(1, 0, 0); // Rouge vif pour une bonne visibilité
+    
+        const startLine = MeshBuilder.CreateBox("startLine", { height: 1, width: 150, depth: 1 }, this.#gameScene);
+        startLine.position = new Vector3(0, 0, 10); // Proche du joueur
+        startLine.isVisible = true; // Rendre visible pour le débogage
+        startLine.material = visibleMaterial; // Appliquer le matériau rouge
+    
+        const finishLine = MeshBuilder.CreateBox("finishLine", { height: 1, width: 150, depth: 1 }, this.#gameScene);
+        finishLine.position = new Vector3(0, 0, this.#groundLength - 10); // Près de l'extrémité du terrain
+        finishLine.isVisible = true; // Rendre visible pour le débogage
+        finishLine.material = visibleMaterial; // Appliquer le matériau rouge
+    
+        // Ajout des gestionnaires de collision pour les triggers
+        this.#setupTrigger(startLine, () => this.startTimer());
+        this.#setupTrigger(finishLine, () => this.stopTimer());
+    }
+    
+    #setupTrigger(trigger, action) {
+        trigger.actionManager = new ActionManager(this.#gameScene);
+        trigger.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnIntersectionEnterTrigger, { mesh: this.#player.gameObject }, action));
+    }
+
+    loadTree(scene, position) {
+        SceneLoader.ImportMesh(
+            "",          
+            "",  
+            treeUrl,
+            scene,
+            function (meshes) {
+                let tree = meshes[0];
+                tree.position = position;
+
+                tree.scaling = new Vector3(7, 7, 7); 
+    
+                // Rotation si nécessaire (en radians)
+                tree.rotation.y = Math.PI / 4;  // Rotation de 45 degrés, par exemple
+            }
+        );
+    }
+    
+    loadNature(scene, position) {
+        SceneLoader.ImportMesh(
+            "",          
+            "",  
+            natureUrl,
+            scene,
+            function (meshes) {
+                let tree = meshes[0];
+                tree.position = position;
+
+                tree.scaling = new Vector3(8, 8, 8); 
+    
+                // Rotation si nécessaire (en radians)
+                tree.rotation.y = Math.PI / 4;  // Rotation de 45 degrés, par exemple
+            }
+        );
+    }
+
     setupUI() {
-        
         const gui = AdvancedDynamicTexture.CreateFullscreenUI("UI");
+    
         const enduranceBar = new Rectangle();
-        
-        enduranceBar.width = 0.2; // 20% de la largeur de l'écran
+        enduranceBar.width = "20%"; // Utilisation de pourcentage directement
         enduranceBar.height = "40px";
         enduranceBar.cornerRadius = 20;
         enduranceBar.color = "white";
@@ -230,17 +285,17 @@ class Game {
         enduranceBar.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
         enduranceBar.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
         enduranceBar.top = "20px";
-        enduranceBar.left = "-20px"; // Décalage de 20px depuis le bord droit
+        enduranceBar.left = "-20px";
         gui.addControl(enduranceBar);
-
+    
         const enduranceBarFill = new Rectangle();
         enduranceBarFill.width = `${this.#player.endurance}%`;
         enduranceBarFill.height = "100%";
         enduranceBarFill.cornerRadius = 20;
         enduranceBarFill.background = "blue";
-        enduranceBarFill.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+        enduranceBarFill.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_LEFT;
         enduranceBar.addControl(enduranceBarFill);
-
+    
         const label = new TextBlock();
         label.text = "Endurance";
         label.color = "white";
@@ -248,10 +303,57 @@ class Game {
         label.textHorizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
         label.textVerticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
         enduranceBar.addControl(label);
+    
+        // Affichage du temps
+        const timeText = new TextBlock();
+        timeText.text = "Meilleur temps: ---, Temps actuel: 0.00";
+        timeText.color = "white";
+        timeText.fontSize = 24;
+        timeText.height = "50px";
+        timeText.top = "20px";
+        timeText.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_CENTER;
+        timeText.verticalAlignment = Control.VERTICAL_ALIGNMENT_TOP;
+        gui.addControl(timeText);
 
+         // Ajout de l'image de guide
+        const guideImage = new Image("guideImage", guideUrl);
+        guideImage.width = "400px";  // Ajustez selon la taille souhaitée
+        guideImage.height = "250px"; // Ajustez selon la taille souhaitée
+        guideImage.horizontalAlignment = Control.HORIZONTAL_ALIGNMENT_RIGHT;
+        guideImage.verticalAlignment = Control.VERTICAL_ALIGNMENT_BOTTOM;
+        guideImage.left = "-10px"; // Ajustez la marge à droite
+        guideImage.top = "-10px";  // Ajustez la marge en bas
+        gui.addControl(guideImage);
+        console.log("Guide image added", guideImage);
+    
         this.#scene.onBeforeRenderObservable.add(() => {
+            if (this.#timerActive) {
+                const currentTime = (Date.now() - this.#startTime) / 1000;
+                timeText.text = `Temps actuel: ${currentTime.toFixed(2)}s, Meilleur temps: ${this.#bestTime.toFixed(2)}s`;
+            }
             enduranceBarFill.width = `${this.#player.endurance}%`; // Mise à jour de la largeur de la barre en fonction de l'endurance du joueur
         });
-    }      
+    }
+    
+    
+    startTimer() {
+        if (!this.#timerActive) {
+            this.#startTime = Date.now();
+            this.#timerActive = true;
+        }
+    }
+    
+    stopTimer() {
+        if (this.#timerActive) {
+            const endTime = Date.now();
+            const elapsed = (endTime - this.#startTime) / 1000; // en secondes
+            if (elapsed < this.#bestTime) {
+                this.#bestTime = elapsed;
+            }
+            this.#timerActive = false;
+            console.log(`Temps actuel: ${elapsed}s, Meilleur temps: ${this.#bestTime}s`);
+        }
+    }
+
 }
 export default Game;
