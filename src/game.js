@@ -4,6 +4,7 @@ import { Inspector } from "@babylonjs/inspector";
 import Player from "./player";
 import { SoundManager } from "./soundmanager";
 import floor from "../assets/textures/grass.png";
+import terrain from "../assets/models/terrain.glb";
 import treeUrl from "../assets/models/tree.glb";
 import guideUrl from "../assets/picture/guide.png";
 import natureUrl from "../assets/models/natureFloor.glb";
@@ -21,6 +22,12 @@ class Game {
     inputMap = {};
     actions = {};
     #gameScene;
+    cameraCollider;
+    visibleMaterial;
+    startLine;
+    finishLine;
+
+
     
     #phase = 0.0;
     #vitesseY = 0.0018;
@@ -54,6 +61,12 @@ class Game {
         await SoundManager.init();
         this.#player = new Player(0, 0, 0, 100, this.#gameScene, this.#camera);
         await this.#player.init();
+        this.#player.gameObject.checkCollisions = true; // Activer les collisions pour le joueur
+
+
+        // Ajout des gestionnaires de collision pour les triggers
+        this.#setupTrigger(this.startLine, () => this.startTimer());
+        this.#setupTrigger(this.finishLine, () => this.stopTimer());
     
         // Définir la position du joueur comme le point cible de l'ArcRotateCamera
         this.#camera.target = this.#player.gameObject.position;
@@ -169,6 +182,9 @@ class Game {
             1, -1), 1.2, 24, this.#scene);
         const shadowGenerator = new ShadowGenerator(1024, sLight);
         shadowGenerator.useBlurExponentialShadowMap = true;
+        
+
+
 
         // Création du plan qui servira de terrain
         const ground = MeshBuilder.CreateGround("ground", {width: 120, height: this.#groundLength}, this.scene);
@@ -181,59 +197,66 @@ class Game {
         groundMaterial.diffuseTexture = new Texture(floor, this.scene);
         
         ground.material = groundMaterial;
-        
-        // Ajustements optionnels
-        ground.material.diffuseTexture.uScale = 15; // Répétition de la texture en U
-        ground.material.diffuseTexture.vScale = 90; // Répétition de la texture en V
-        ground.receiveShadows = true; // Pour recevoir des ombres si nécessaire
+        ground.material.diffuseTexture.uScale = 15; 
+        ground.material.diffuseTexture.vScale = 90; 
+        ground.receiveShadows = true;
+
+        // Créer un mesh de collision pour la caméra
+        this.cameraCollider = MeshBuilder.CreateBox("cameraCollider", { height: 2, width: 2, depth: 2 }, this.#scene);
+        this.cameraCollider.isVisible = true; 
+        let zoneMat = new StandardMaterial("cameraCollider", this.#scene); 
+        zoneMat.diffuseColor = Color3.Red();
+        this.cameraCollider.diffuseColor = zoneMat;
+
+        // Attacher le collider à la caméra
+        this.cameraCollider.parent = this.#camera;
+        this.cameraCollider.position = new Vector3(0, 0, -2); // Positionner le collider devant la caméra
+        this.cameraCollider.checkCollisions = true;  // Activer la détection de collisions pour le collider
 
         
-        for(let i = 0; i < 25; i++){
-            this.loadTree(this.#scene, new Vector3(45,0,90 - (i*25)));
-            this.loadTree(this.#scene, new Vector3(-45,0,90 - (i*25)));
+        for(let i = 0; i < 24; i++){
+            this.loadTree(this.#scene, new Vector3(45,0,90 - (i*40)));
+            this.loadTree(this.#scene, new Vector3(-45,0,90 - (i*40)));
         }
         this.loadTree(this.#scene, new Vector3(15,0,90));
         this.loadTree(this.#scene, new Vector3(30,0,90));
-        this.loadTree(this.#scene, new Vector3(0,0,90));
         this.loadTree(this.#scene, new Vector3(-30,0,90));
         this.loadTree(this.#scene, new Vector3(-15,0,90));
         this.loadTree(this.#scene, new Vector3(30,0,-879));
         this.loadTree(this.#scene, new Vector3(15,0,-879));
-        this.loadTree(this.#scene, new Vector3(0,0,-879));
         this.loadTree(this.#scene, new Vector3(-30,0,-879));
         this.loadTree(this.#scene, new Vector3(-15,0,-879));
 
-        for(let i = 0; i < 20; i++){
+        for(let i = 0; i < 16; i++){
             this.loadNature(this.#scene, new Vector3(15,0,70 - (i*60)));
             this.loadNature(this.#scene, new Vector3(-15,0,70 - (i*60)));
         }
-
+        this.createTriggers();
         return this.#scene;
     }
 
     createTriggers() {
         // Matériau pour les triggers
-        const visibleMaterial = new StandardMaterial("triggerMat", this.#scene);
-        visibleMaterial.diffuseColor = new Color3(1, 0, 0); // Rouge vif pour une bonne visibilité
+        this.visibleMaterial = new StandardMaterial("triggerMat", this.#scene);
+        this.visibleMaterial.diffuseColor = new Color3(1, 0, 0); // Rouge vif pour une bonne visibilité
     
-        const startLine = MeshBuilder.CreateBox("startLine", { height: 1, width: 150, depth: 1 }, this.#gameScene);
-        startLine.position = new Vector3(0, 0, 10); // Proche du joueur
-        startLine.isVisible = true; // Rendre visible pour le débogage
-        startLine.material = visibleMaterial; // Appliquer le matériau rouge
+        this.startLine = MeshBuilder.CreateBox("startLine", { height: 1, width: 20, depth: 1 }, this.#gameScene);
+        this.startLine.position = new Vector3(0, 0, -10); // Proche du joueur
+        this.startLine.isVisible = true; // Rendre visible pour le débogage
+        this.startLine.material = this.visibleMaterial; // Appliquer le matériau rouge
     
-        const finishLine = MeshBuilder.CreateBox("finishLine", { height: 1, width: 150, depth: 1 }, this.#gameScene);
-        finishLine.position = new Vector3(0, 0, this.#groundLength - 10); // Près de l'extrémité du terrain
-        finishLine.isVisible = true; // Rendre visible pour le débogage
-        finishLine.material = visibleMaterial; // Appliquer le matériau rouge
-    
-        // Ajout des gestionnaires de collision pour les triggers
-        this.#setupTrigger(startLine, () => this.startTimer());
-        this.#setupTrigger(finishLine, () => this.stopTimer());
+        this.finishLine = MeshBuilder.CreateBox("finishLine", { height: 1, width: 20, depth: 1 }, this.#gameScene);
+        this.finishLine.position = new Vector3(0, 0, -840); // Près de l'extrémité du terrain
+        this.finishLine.isVisible = true; // Rendre visible pour le débogage
+        this.finishLine.material = this.visibleMaterial; // Appliquer le matériau rouge
     }
     
     #setupTrigger(trigger, action) {
         trigger.actionManager = new ActionManager(this.#gameScene);
-        trigger.actionManager.registerAction(new ExecuteCodeAction(ActionManager.OnIntersectionEnterTrigger, { mesh: this.#player.gameObject }, action));
+        trigger.actionManager.registerAction(new ExecuteCodeAction({
+            trigger: ActionManager.OnIntersectionEnterTrigger,
+            parameter: this.#player.gameObject
+        }, action));
     }
 
     loadTree(scene, position) {
