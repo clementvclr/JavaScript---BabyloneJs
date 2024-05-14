@@ -9,7 +9,7 @@ Dans la version finale du jeu, le joueur se retrouve seul sur un circuit de cour
 
 * Z pour avancer (ou Q en clavier QWERTY)
 * S pour reculer
-* Maintient du clic gauche pour tourner la caméra et le personnages
+* Maintient du clic gauche de la souris pour tourner la caméra et le personnages
 * Maj (Shift) pour accélérer le personnages (cela consomme de l'endurance)
 
 # Menu du jeu 
