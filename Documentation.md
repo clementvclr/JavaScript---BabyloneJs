@@ -16,7 +16,7 @@ Dans la version finale du jeu, le joueur se retrouve seul sur un circuit de cour
 
 Le menu se compose uniquement du bouton Play pour être amené dans le jeu :
 
-![MENU](https://imgur.com/a/MVffFtd)
+![MENU](https://imgur.com/a/MVffFtd.png)
 
 # Jeu
 
