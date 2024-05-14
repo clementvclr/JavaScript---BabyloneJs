@@ -16,6 +16,9 @@ Dans la version finale du jeu, le joueur se retrouve seul sur un circuit de cour
 
 Le menu se compose uniquement du bouton Play pour être amené dans le jeu :
 
+
+![MENU](https://github.com/Masnie1/Olympic-Adventure-Game/assets/91393594/4bb10805-96e2-4bce-8990-2e56679f0bde)
+
 ![MENU](https://imgur.com/a/MVffFtd.png)
 
 # Jeu
