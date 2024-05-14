@@ -16,7 +16,7 @@ Dans la version finale du jeu, le joueur se retrouve seul sur un circuit de cour
 
 Le menu se compose uniquement du bouton Play pour être amené dans le jeu :
 
-<img src="https://imgur.com/a/MVffFtd" alt= “” width="70%">
+![MENU](https://imgur.com/a/MVffFtd)
 
 # Jeu
 
@@ -24,11 +24,11 @@ Dans notre jeu, il y a une ligne de départ, pour commencer le chronomètre de l
 
 Ligne de départ :
 
-<img src="https://imgur.com/a/KGMjoHF" alt= “” width="70%">
+![DEPART](https://imgur.com/a/KGMjoHF)
 
 Ligne d'arrivée :
 
-<img src="https://imgur.com/a/5oaCV84" alt= “” width="70%">
+![ARRIVE](https://imgur.com/a/5oaCV84)
 
 
 # Mécanique
