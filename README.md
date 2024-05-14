@@ -9,4 +9,4 @@ Fait dans le cadre du Projet d'année L3I MIAGE à Aix-Marseille Université
 
 ## Documentation
 
-[Lien de la documentation](Documentation.md)
+[Documentation](Documentation.md)
