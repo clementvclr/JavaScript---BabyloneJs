@@ -16,10 +16,7 @@ Dans la version finale du jeu, le joueur se retrouve seul sur un circuit de cour
 
 Le menu se compose uniquement du bouton Play pour être amené dans le jeu :
 
-
 ![MENU](https://github.com/Masnie1/Olympic-Adventure-Game/assets/91393594/4bb10805-96e2-4bce-8990-2e56679f0bde)
-
-![MENU](https://imgur.com/a/MVffFtd.png)
 
 # Jeu
 
@@ -27,18 +24,19 @@ Dans notre jeu, il y a une ligne de départ, pour commencer le chronomètre de l
 
 Ligne de départ :
 
-![DEPART](https://imgur.com/a/KGMjoHF)
+![DEPART](https://github.com/Masnie1/Olympic-Adventure-Game/assets/91393594/da98d6d0-dd91-4232-9357-952421c04151)
 
 Ligne d'arrivée :
 
-![ARRIVE](https://imgur.com/a/5oaCV84)
-
+![ARRIVE](https://github.com/Masnie1/Olympic-Adventure-Game/assets/91393594/9da4aba9-a44b-4c74-a584-70e27a015364)
 
 # Mécanique
 
 - L'endurance (situé en haut à droite de l'écran) est la ressource du porteur, qui se recharge sur le temps, pour accélérer avec le bouton Shift mais on ne pourras plus courir pendant quelques instant lorsque celle-ci est totalement épuisé par le joueur.
-<img src="https://imgur.com/a/y9FHCuC" alt= “” width="70%">
+- 
+![ENDURANCE](https://github.com/Masnie1/Olympic-Adventure-Game/assets/91393594/97380861-9ac1-40bf-9e68-f5930edc7a0b)
 
 - Ligne de départ est un déclencheur permettant d'éffacer le temps actuel et de relancer le chronomètre.
 - Ligne d'arrivée est un déclencheur permettant d'arreter le chronomètre et de remplacer le meilleur temps si il est meilleur.
-<img src="https://imgur.com/a/F9FIStj" alt= “” width="70%">
+
+![LIGNE](https://github.com/Masnie1/Olympic-Adventure-Game/assets/91393594/e7e36698-a987-4d53-8683-d94bb4a75d12)
